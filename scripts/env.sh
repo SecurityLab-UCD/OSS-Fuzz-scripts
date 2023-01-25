@@ -12,9 +12,4 @@ export AFL_LLVM_INSTRUMENT=unset PCGUARD
 export CORES=`nproc`
 unset AFL_EXIT_ON_SEED_ISSUES
 export FFMPEG=$DETECTION_HOME/FFmpeg
-
-# check py3 version
-if ! python3 -c 'import sys; assert sys.version_info[:2] >= (3,8)' > /dev/null 2>&1
-then 
-    alias python3=python3.8
-fi
+export QEMU=$DETECTION_HOME/qemu
