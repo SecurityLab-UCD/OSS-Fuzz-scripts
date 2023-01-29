@@ -4,8 +4,7 @@ export DETECTION_HOME=`pwd`
 export AFL=$DETECTION_HOME/AFLplusplus
 export LLVM=$HOME/clang+llvm
 export PATH=$PATH:$LLVM:$AFL
-export AFL_EXIT_ON_TIME=60
-# export AFL_NO_UI=1
+export AFL_NO_UI=1
 unset AFL_CUSTOM_MUTATOR_LIBRARY
 unset AFL_CUSTOM_MUTATOR_ONLY
 export AFL_LLVM_INSTRUMENT=unset PCGUARD 

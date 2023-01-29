@@ -24,3 +24,6 @@ sample
 # ignore since video files too large
 # will add script to get seeds
 seeds
+samples.ffmpeg.org
+
+fuzz
