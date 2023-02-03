@@ -17,6 +17,11 @@ if FFMPEG == None:
     error("FFMPEG not set, please tell me where FFmpeg is.")
     exit(1)
 
+QEMU = os.getenv("QEMU")
+if QEMU == None:
+    error("QEMU not set, please tell me where qemu is.")
+    exit(1)
+
 LLVM = os.getenv("LLVM")
 if LLVM == None:
     error("LLVM not set, please tell me where clang+llvm is.")

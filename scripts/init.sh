@@ -34,6 +34,6 @@ git submodule update --init --recursive
 mkdir -p build; cd build
 # if --enable-debug make will fail
 ../configure --cc=$AFL/afl-clang-fast --cxx=$AFL/afl-clang-fast++
-make -j; cd $DETECTION_HOME
+make -j qemu-x86_64; cd $DETECTION_HOME
 
 

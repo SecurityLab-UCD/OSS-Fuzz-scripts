@@ -6,18 +6,34 @@ from logging import error, info, warning
 from functools import partial
 import argparse
 import warnings
-from util import download_dir, fuzz_one_instance
+from util import fuzz_one_instance
 
 
 class Project:
+    seeds_dir: str = ""
+    target: str = ""
+
     def __init__(self):
         pass
 
     def get_seeds(self):
         pass
 
-    def fuzz(self):
-        pass
+    def fuzz(self, jobs=CORES, timeout=3600):
+        if not path.isdir("fuzz"):
+            os.mkdir("fuzz")
+        out = "fuzz"
+        to_fuzz = [(self.target, out, "fuzzer0", "-M")]
+        to_fuzz += [(self.target, out, f"fuzzer{i}", "-S") for i in range(1, jobs)]
+        print(len(to_fuzz))
+        print(timeout)
+        subprocess.run(["sleep", "0.5"])
+        parallel_subprocess(
+            to_fuzz,
+            jobs,
+            lambda r: fuzz_one_instance(r, timeout=timeout, seeds=self.seeds),
+            use_tqdm=False,
+        )
 
     def summarize(self):
         pass
@@ -27,6 +43,7 @@ class FFmpeg(Project):
     def __init__(self, seeds_dir):
         Project.__init__(self)
         self.seeds = path.join(seeds_dir, "ffmpeg")
+        self.target = f"{FFMPEG}/ffmpeg"
 
     def get_seeds(self, jobs: int = CORES):
         # http://samples.ffmpeg.org/
@@ -35,30 +52,25 @@ class FFmpeg(Project):
         for s in tqdm(seeds):
             subprocess.run(["wget", "-r", "--no-parent", f"https://{domain}/{s}"])
         os.system(
-            f"{AFL}/afl-cmin -i {domain} -o minffmpeg -- {FFMPEG}/ffmpeg -i @@ ffmpeg"
+            f"{AFL}/afl-cmin -i {domain} -o minffmpeg -- {self.target} -i @@ ffmpeg"
         )
         os.system(f"rm {domain}; mv minffmpeg {self.seeds}")
 
-    def fuzz(
-        self,
-        target="ffmpeg",
-        jobs=CORES,
-        timeout=3600,
-    ):
-        if not path.isdir("fuzz"):
-            os.mkdir("fuzz")
-        out = "fuzz/ffmpeg"
-        binary = f"{FFMPEG}/{target}"
-        to_fuzz = [(binary, out, "ffmpeg-fuzzer0", "-M")]
-        to_fuzz += [(binary, out, f"ffmpeg-fuzzer{i}", "-S") for i in range(1, jobs)]
-        print(len(to_fuzz))
-        print(timeout)
-        parallel_subprocess(
-            to_fuzz,
-            jobs,
-            lambda r: fuzz_one_instance(r, timeout=timeout, seeds=self.seeds),
-            use_tqdm=True,
+
+class Qemu(Project):
+    def __init__(self, seeds_dir="seeds"):
+        Project.__init__(self)
+        self.seeds = path.join(seeds_dir, "qemu")
+        self.target = f"{QEMU}/build/qemu-x86_64"
+
+    def get_seeds(self):
+        if not os.path.isdir(self.seeds):
+            info(f"make new directory at {self.seeds}")
+            os.mkdir(self.seeds)
+        os.system(
+            f"{AFL}/afl-cmin -i {QEMU}/tests/ -o minqemu -- {self.target} -i @@ qemu"
         )
+        os.system(f"mv minqemu {self.seeds}")
 
 
 def main():
@@ -96,9 +108,8 @@ def main():
     dataset = None
     if args.dataset == "FFmpeg":
         dataset = FFmpeg(seeds_dir="seeds")
-    # Keep the elif chain in case any dataset needs special handling
-    # elif args.dataset == "qemu":
-    #     dataset = Qemu()
+    elif args.dataset == "qemu":
+        dataset = Qemu(seeds_dir="seeds")
     else:
         unreachable("No dataset provided.")
 
@@ -109,9 +120,9 @@ def main():
     if args.pipeline == "all":
         dataset.get_seeds()
         dataset.fuzz(jobs=args.jobs, timeout=convert_to_seconds(args.fuzztime))
-    elif args.pipline == "get_seeds":
+    elif args.pipeline == "get_seeds":
         dataset.get_seeds()
-    elif args.pipline == "fuzz":
+    elif args.pipeline == "fuzz":
         dataset.fuzz(jobs=args.jobs, timeout=convert_to_seconds(args.fuzztime))
     else:
         unreachable("Unkown pipeline provided")
