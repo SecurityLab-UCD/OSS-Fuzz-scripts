@@ -32,8 +32,7 @@ fi
 cd $QEMU;
 git submodule update --init --recursive
 mkdir -p build; cd build
-# if --enable-debug make will fail
-../configure --cc=$AFL/afl-clang-fast --cxx=$AFL/afl-clang-fast++
+../configure --cc=clang --cxx=clang++ --enable-fuzzing --enable-sanitizers --extra-cflags="-fprofile-instr-generate -fcoverage-mapping"
 make -j qemu-x86_64; cd $DETECTION_HOME
 
 

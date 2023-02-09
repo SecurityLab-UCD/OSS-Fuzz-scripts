@@ -19,7 +19,7 @@ class Project:
     def get_seeds(self):
         pass
 
-    def fuzz(self, jobs=CORES, timeout=3600):
+    def fuzz(self, target: str, jobs=CORES, timeout=3600):
         if not path.isdir("fuzz"):
             os.mkdir("fuzz")
         out = "fuzz"
@@ -56,6 +56,9 @@ class FFmpeg(Project):
         )
         os.system(f"rm {domain}; mv minffmpeg {self.seeds}")
 
+    def fuzz(self, target: str = "ffmpeg", jobs=CORES, timeout=3600):
+        Project.fuzz(self, target, jobs=jobs, timeout=timeout)
+
 
 class Qemu(Project):
     def __init__(self, seeds_dir="seeds"):
@@ -71,6 +74,32 @@ class Qemu(Project):
             f"{AFL}/afl-cmin -i {QEMU}/tests/ -o minqemu -- {self.target} -i @@ qemu"
         )
         os.system(f"mv minqemu {self.seeds}")
+
+    def get_fuzz_target(self, target):
+        target_split_names = target.split("-")
+        target_split_names.insert(1, "fuzz")
+        fuzz_target = "-".join(target_split_names)
+        return fuzz_target
+
+    def build_target(self, target: str, jobs=CORES):
+        fuzz_target = self.get_fuzz_target(target)
+        os.system(f"cd {QEMU}/build && make -j{jobs} {target} {fuzz_target}")
+
+    def fuzz(
+        self,
+        target: str = "qemu-x86_64",
+        jobs=CORES,
+        timeout=3600,
+    ):
+        if not path.isdir("fuzz"):
+            os.mkdir("fuzz")
+        fuzz_dir = "fuzz/qemu"
+        if not path.isdir(fuzz_dir):
+            os.mkdir(fuzz_dir)
+        fuzz_target = self.get_fuzz_target(target)
+        os.system(
+            f"timeout {timeout} {QEMU}/build/{fuzz_target} --fuzz-target=generic-fuzz-parallel {fuzz_dir} -jobs={jobs}"
+        )
 
 
 def main():
@@ -95,6 +124,7 @@ def main():
         choices=[
             "all",
             "get_seeds",
+            "build",
             "fuzz",
             "summarize",
         ],
@@ -102,6 +132,7 @@ def main():
     parser.add_argument(
         "-ft", "--fuzztime", type=str, help="Time to fuzz one program", default="1d"
     )
+    parser.add_argument("-t", "--target", type=str, help="Target to build")
 
     args = parser.parse_args()
 
@@ -122,8 +153,14 @@ def main():
         dataset.fuzz(jobs=args.jobs, timeout=convert_to_seconds(args.fuzztime))
     elif args.pipeline == "get_seeds":
         dataset.get_seeds()
+    elif args.pipeline == "build" and args.dataset == "qemu":
+        dataset.build_target(args.target, jobs=args.jobs)
     elif args.pipeline == "fuzz":
-        dataset.fuzz(jobs=args.jobs, timeout=convert_to_seconds(args.fuzztime))
+        dataset.fuzz(
+            target=args.target,
+            jobs=args.jobs,
+            timeout=convert_to_seconds(args.fuzztime),
+        )
     else:
         unreachable("Unkown pipeline provided")
 
