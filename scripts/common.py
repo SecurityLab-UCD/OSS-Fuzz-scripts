@@ -12,14 +12,9 @@ if AFL == None:
     error("AFL not set, please tell me where AFL++ is.")
     exit(1)
 
-FFMPEG = os.getenv("FFMPEG")
-if FFMPEG == None:
-    error("FFMPEG not set, please tell me where FFmpeg is.")
-    exit(1)
-
-QEMU = os.getenv("QEMU")
-if QEMU == None:
-    error("QEMU not set, please tell me where qemu is.")
+OSSFUZZ = os.getenv("OSSFUZZ")
+if OSSFUZZ == None:
+    error("AFL not set, please tell me where AFL++ is.")
     exit(1)
 
 LLVM = os.getenv("LLVM")
