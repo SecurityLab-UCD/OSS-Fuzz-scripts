@@ -13,11 +13,11 @@ class Project:
     def __init__(self, project: str, fuzzdir: str):
         self.project = project
         self.fuzzdir = path.join(DETECTION_HOME, fuzzdir)
-        self.targets = []
+        self.targets: List[str] = []
 
     def build(self):
         os.system(f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project}")
-        self.targets = self._update_targets()
+        self._update_targets()
 
     def mkdir_if_doesnt_exist(self):
         if not path.isdir(self.fuzzdir):
@@ -32,7 +32,7 @@ class Project:
             if not path.isdir(subdir):
                 os.makedirs(subdir)
 
-    def _update_targets(self) -> List[str]:
+    def _update_targets(self):
         bindir = path.join(OSSFUZZ, "build/out", self.project)
         if not path.isdir(bindir):
             warning("project build dir doesn't exist, please build the project first")
@@ -41,7 +41,9 @@ class Project:
                 self.targets.append(f)
 
     def fuzz(self, jobs=CORES, fuzztime=3600):
-        self._update_targets()
+        if not self.targets:
+            self._update_targets()
+
         if not self.targets:
             warning("no targets found, please build fuzzers first")
 
@@ -73,7 +75,6 @@ def main():
         "-d",
         "--dataset",
         type=str,
-        choices=["ffmpeg", "qemu"],
         required=True,
         help="The dataset to build",
     )
@@ -109,7 +110,7 @@ def main():
 
     aviliable_porjects = os.listdir(path.join(OSSFUZZ, "projects"))
     if args.dataset not in aviliable_porjects:
-        unreachable("No dataset provided.")
+        unreachable("Unknown dataset provided.")
 
     dataset = Project(args.dataset, args.fuzzout)
 
@@ -118,15 +119,12 @@ def main():
         return int(s[:-1]) * seconds_per_unit[s[-1]]
 
     if args.pipeline == "all":
-        dataset.get_seeds()
-        dataset.fuzz(jobs=args.jobs, timeout=convert_to_seconds(args.fuzztime))
+        dataset.build()
+        dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
     elif args.pipeline == "build":
         dataset.build()
     elif args.pipeline == "fuzz":
-        dataset.fuzz(
-            jobs=args.jobs,
-            fuzztime=convert_to_seconds(args.fuzztime),
-        )
+        dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
     else:
         unreachable("Unkown pipeline provided")
 

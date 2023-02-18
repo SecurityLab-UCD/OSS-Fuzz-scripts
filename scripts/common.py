@@ -39,7 +39,7 @@ __R = TypeVar("__R")
 
 
 def unreachable(s: str = ""):
-    error(f"Unreachable executed: {str}")
+    error(f"Unreachable executed: {s}")
     exit(1)
 
 
