@@ -7,10 +7,6 @@ import subprocess
 from tqdm import tqdm
 import socket
 
-AFL = os.getenv("AFL")
-if AFL == None:
-    error("AFL not set, please tell me where AFL++ is.")
-    exit(1)
 
 OSSFUZZ = os.getenv("OSSFUZZ")
 if OSSFUZZ == None:
