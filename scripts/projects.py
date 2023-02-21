@@ -37,7 +37,8 @@ class Project:
         if not path.isdir(bindir):
             warning("project build dir doesn't exist, please build the project first")
         for f in os.listdir(bindir):
-            if os.access(path.join(bindir, f), os.X_OK) and "fuzz" in f:
+            fpath = path.join(bindir, f)
+            if os.access(fpath, os.X_OK) and "fuzz" in f and not path.isdir(fpath):
                 self.targets.append(f)
 
     def fuzz(self, jobs=CORES, fuzztime=3600):
