@@ -27,6 +27,10 @@ class Project:
         if not path.isdir(proj_fuzzout):
             os.makedirs(proj_fuzzout)
 
+        proj_crash = path.join(proj_fuzzout, "crashes")
+        if not path.isdir(proj_crash):
+            os.makedirs(proj_crash)
+
         for t in self.targets:
             subdir = path.join(proj_fuzzout, str(t))
             if not path.isdir(subdir):
@@ -62,6 +66,10 @@ class Project:
             lambda r: oss_fuzz_one_target(r, proj=self.project, fuzztime=fuzztime),
             on_exit=None,
         )
+        
+        # redirect all crashes
+        crash_dir = path.join(self.fuzzdir, self.project, "crashes")
+        os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
 
     def postprocess(self):
         pass
