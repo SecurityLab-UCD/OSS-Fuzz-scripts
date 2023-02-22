@@ -6,21 +6,8 @@ from logging import error, info, warning
 from functools import partial, reduce
 import argparse
 import warnings
+import yaml
 from util import oss_fuzz_one_target, convert_to_seconds
-
-
-# def fuzz_all(project_names: List[str], fuzzout: str, jobs: int, fuzztime: int):
-#     projects = [Project(n, fuzzout) for n in project_names]
-#     all_bins = reduce(
-#         lambda xs, ys: xs + ys, map(lambda p: p.collect_bins_to_fuzz(), projects)
-#     )
-#     parallel_subprocess(
-#         all_bins,
-#         jobs,
-#         lambda r: oss_fuzz_one_target(r, proj=project, fuzztime=fuzztime),
-#         on_exit=None,
-#     )
-#     pass
 
 
 class Project:
@@ -28,6 +15,8 @@ class Project:
         self.project = project
         self.fuzzdir = path.join(DETECTION_HOME, fuzzdir)
         self.targets: List[str] = []
+        with open(f"{OSSFUZZ}/projects/{project}/project.yaml", "r") as f:
+            self.config = yaml.safe_load(f)
 
     def build(self):
         os.system(f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project}")
@@ -54,10 +43,17 @@ class Project:
         bindir = path.join(OSSFUZZ, "build/out", self.project)
         if not path.isdir(bindir):
             warning("project build dir doesn't exist, please build the project first")
-        for f in os.listdir(bindir):
-            fpath = path.join(bindir, f)
-            if os.access(fpath, os.X_OK) and not path.isdir(fpath):
-                self.targets.append(f)
+
+        # since each projects has its own style of naming fuzzers
+        #   w/o fuzzer as substring of fuzzer names
+        # and some language projects's fuzzers are not exec
+        #   for example, jvm projects have -rwxr--r-- Log4jFuzzer
+        # we will just take any file thats not a directory
+        # if any of collected files is not actually a fuzzer, the result corpus dir will be just empty
+        self.targets = [
+            f for f in os.listdir(bindir) if not path.isdir(path.join(bindir, f))
+        ]
+        print(self.targets)
 
     def fuzz(self, jobs=CORES, fuzztime=3600):
         if not self.targets:
