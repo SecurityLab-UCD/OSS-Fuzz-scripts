@@ -3,10 +3,24 @@ from os import path
 import os
 from typing import List, Tuple
 from logging import error, info, warning
-from functools import partial
+from functools import partial, reduce
 import argparse
 import warnings
-from util import oss_fuzz_one_target
+from util import oss_fuzz_one_target, convert_to_seconds
+
+
+# def fuzz_all(project_names: List[str], fuzzout: str, jobs: int, fuzztime: int):
+#     projects = [Project(n, fuzzout) for n in project_names]
+#     all_bins = reduce(
+#         lambda xs, ys: xs + ys, map(lambda p: p.collect_bins_to_fuzz(), projects)
+#     )
+#     parallel_subprocess(
+#         all_bins,
+#         jobs,
+#         lambda r: oss_fuzz_one_target(r, proj=project, fuzztime=fuzztime),
+#         on_exit=None,
+#     )
+#     pass
 
 
 class Project:
@@ -42,7 +56,7 @@ class Project:
             warning("project build dir doesn't exist, please build the project first")
         for f in os.listdir(bindir):
             fpath = path.join(bindir, f)
-            if os.access(fpath, os.X_OK) and "fuzz" in f and not path.isdir(fpath):
+            if os.access(fpath, os.X_OK) and not path.isdir(fpath):
                 self.targets.append(f)
 
     def fuzz(self, jobs=CORES, fuzztime=3600):
@@ -66,7 +80,7 @@ class Project:
             lambda r: oss_fuzz_one_target(r, proj=self.project, fuzztime=fuzztime),
             on_exit=None,
         )
-        
+
         # redirect all crashes
         crash_dir = path.join(self.fuzzdir, self.project, "crashes")
         os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
@@ -122,10 +136,6 @@ def main():
         unreachable("Unknown dataset provided.")
 
     dataset = Project(args.dataset, args.fuzzout)
-
-    def convert_to_seconds(s: str) -> int:
-        seconds_per_unit = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
-        return int(s[:-1]) * seconds_per_unit[s[-1]]
 
     if args.pipeline == "all":
         dataset.build()
