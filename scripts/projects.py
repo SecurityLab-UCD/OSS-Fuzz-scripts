@@ -53,7 +53,6 @@ class Project:
         self.targets = [
             f for f in os.listdir(bindir) if not path.isdir(path.join(bindir, f))
         ]
-        print(self.targets)
 
     def fuzz(self, jobs=CORES, fuzztime=3600):
         if not self.targets:
