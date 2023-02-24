@@ -3,10 +3,11 @@ from os import path
 import os
 from typing import List, Tuple
 from logging import error, info, warning
-from functools import partial
+from functools import partial, reduce
 import argparse
 import warnings
-from util import oss_fuzz_one_target
+import yaml
+from util import oss_fuzz_one_target, convert_to_seconds
 
 
 class Project:
@@ -14,6 +15,8 @@ class Project:
         self.project = project
         self.fuzzdir = path.join(DETECTION_HOME, fuzzdir)
         self.targets: List[str] = []
+        with open(f"{OSSFUZZ}/projects/{project}/project.yaml", "r") as f:
+            self.config = yaml.safe_load(f)
 
     def build(self):
         os.system(f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project}")
@@ -27,6 +30,10 @@ class Project:
         if not path.isdir(proj_fuzzout):
             os.makedirs(proj_fuzzout)
 
+        proj_crash = path.join(proj_fuzzout, "crashes")
+        if not path.isdir(proj_crash):
+            os.makedirs(proj_crash)
+
         for t in self.targets:
             subdir = path.join(proj_fuzzout, str(t))
             if not path.isdir(subdir):
@@ -36,9 +43,16 @@ class Project:
         bindir = path.join(OSSFUZZ, "build/out", self.project)
         if not path.isdir(bindir):
             warning("project build dir doesn't exist, please build the project first")
-        for f in os.listdir(bindir):
-            if os.access(path.join(bindir, f), os.X_OK) and "fuzz" in f:
-                self.targets.append(f)
+
+        # since each projects has its own style of naming fuzzers
+        #   w/o fuzzer as substring of fuzzer names
+        # and some language projects's fuzzers are not exec
+        #   for example, jvm projects have -rwxr--r-- Log4jFuzzer
+        # we will just take any file thats not a directory
+        # if any of collected files is not actually a fuzzer, the result corpus dir will be just empty
+        self.targets = [
+            f for f in os.listdir(bindir) if not path.isdir(path.join(bindir, f))
+        ]
 
     def fuzz(self, jobs=CORES, fuzztime=3600):
         if not self.targets:
@@ -61,6 +75,10 @@ class Project:
             lambda r: oss_fuzz_one_target(r, proj=self.project, fuzztime=fuzztime),
             on_exit=None,
         )
+
+        # redirect all crashes
+        crash_dir = path.join(self.fuzzdir, self.project, "crashes")
+        os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
 
     def postprocess(self):
         pass
@@ -113,10 +131,6 @@ def main():
         unreachable("Unknown dataset provided.")
 
     dataset = Project(args.dataset, args.fuzzout)
-
-    def convert_to_seconds(s: str) -> int:
-        seconds_per_unit = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
-        return int(s[:-1]) * seconds_per_unit[s[-1]]
 
     if args.pipeline == "all":
         dataset.build()

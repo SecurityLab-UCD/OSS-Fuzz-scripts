@@ -10,7 +10,7 @@ import socket
 
 OSSFUZZ = os.getenv("OSSFUZZ")
 if OSSFUZZ == None:
-    error("AFL not set, please tell me where AFL++ is.")
+    error("OSSFUZZ not set, please tell me where oss-fuzz is.")
     exit(1)
 
 LLVM = os.getenv("LLVM")

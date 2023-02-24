@@ -5,37 +5,6 @@ from logging import error
 from common import *
 
 
-def fuzz_one_instance(
-    p: Tuple[str, str, str, bool, str],
-    timeout: int,
-    seeds: str,
-):
-    binary, out, instance, node_type = p
-    cmd = [
-        f"{AFL}/afl-fuzz",
-        "-D",
-        "-V",
-        str(timeout),
-        node_type,
-        instance,
-        "-i",
-        seeds,
-        "-o",
-        out,
-        binary,
-        "-i",
-        "@@",
-    ]
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    # Sleep half a second for AFL to bind core.
-    subprocess.run(["sleep", "0.5"])
-    return process
-
-
 def oss_fuzz_one_target(p, proj, fuzztime):
     target, fuzzout = p
     "python infra/helper.py run_fuzzer qemu qemu-fuzz-i386-target-generic-fuzz-virtio-gpu  qemu-seeds"
@@ -55,3 +24,8 @@ def oss_fuzz_one_target(p, proj, fuzztime):
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+
+
+def convert_to_seconds(s: str) -> int:
+    seconds_per_unit = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
+    return int(s[:-1]) * seconds_per_unit[s[-1]]
