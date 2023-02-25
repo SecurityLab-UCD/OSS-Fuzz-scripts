@@ -14,6 +14,7 @@ class Project:
     def __init__(self, project: str, fuzzdir: str):
         self.project = project
         self.fuzzdir = path.join(DETECTION_HOME, fuzzdir)
+        self.proj_fuzzout = path.join(self.fuzzdir, self.project)
         self.targets: List[str] = []
         with open(f"{OSSFUZZ}/projects/{project}/project.yaml", "r") as f:
             self.config = yaml.safe_load(f)
@@ -26,16 +27,15 @@ class Project:
         if not path.isdir(self.fuzzdir):
             os.makedirs(self.fuzzdir)
 
-        proj_fuzzout = path.join(self.fuzzdir, self.project)
-        if not path.isdir(proj_fuzzout):
-            os.makedirs(proj_fuzzout)
+        if not path.isdir(self.proj_fuzzout):
+            os.makedirs(self.proj_fuzzout)
 
-        proj_crash = path.join(proj_fuzzout, "crashes")
+        proj_crash = path.join(self.proj_fuzzout, "crashes")
         if not path.isdir(proj_crash):
             os.makedirs(proj_crash)
 
         for t in self.targets:
-            subdir = path.join(proj_fuzzout, str(t))
+            subdir = path.join(self.proj_fuzzout, str(t))
             if not path.isdir(subdir):
                 os.makedirs(subdir)
 
