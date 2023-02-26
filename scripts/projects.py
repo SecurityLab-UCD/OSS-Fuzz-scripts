@@ -20,7 +20,7 @@ class Project:
             self.config = yaml.safe_load(f)
 
     def build(self):
-        os.system(f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project}")
+        os.system(f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer none")
         self._update_targets()
 
     def mkdir_if_doesnt_exist(self):
