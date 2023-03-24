@@ -15,5 +15,12 @@ fi
 
 
 if [ ! -d $OSSFUZZ ]; then
-    git clone https://github.com/google/oss-fuzz.git
+    git clone https://github.com/SecurityLab-UCD/oss-fuzz.git
 fi
+
+if [ ! -d $REPORT_PASS ]; then
+    git clone https://github.com/SecurityLab-UCD/ReportFunctionExecutedPass.git
+fi
+cd $REPORT_PASS
+make reporter.o pass
+cd ..
