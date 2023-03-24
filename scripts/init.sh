@@ -22,5 +22,5 @@ if [ ! -d $REPORT_PASS ]; then
     git clone https://github.com/SecurityLab-UCD/ReportFunctionExecutedPass.git
 fi
 cd $REPORT_PASS
-make reporter.o pass
+./init.sh
 cd ..
