@@ -6,6 +6,7 @@ from logging import error, info, warning
 from functools import partial, reduce
 import argparse
 import warnings
+import shutil
 import yaml
 from util import oss_fuzz_one_target, convert_to_seconds
 
@@ -20,8 +21,36 @@ class Project:
             self.config = yaml.safe_load(f)
 
     def build(self):
-        os.system(f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer none")
+        os.system(
+            f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer none"
+        )
         self._update_targets()
+
+    def build_w_pass(self):
+        dockerfile = f"{OSSFUZZ}/projects/{self.project}/Dockerfile"
+        os.system(f"cp {dockerfile} {dockerfile}.bak")
+        os.system(
+            f"rsync -av --exclude='.*' {DETECTION_HOME}/ReportFunctionExecutedPass {OSSFUZZ}/projects/{self.project}"
+        )
+        report_pass_config = (
+            "ENV REPORT_PASS=$SRC/ffmpeg/ReportFunctionExecutedPass\n"
+            "COPY build_w_pass.sh $SRC/build.sh\n"
+            "COPY ReportFunctionExecutedPass $REPORT_PASS\n"
+            "RUN cd $REPORT_PASS && ./init.sh\n"
+        )
+
+        with open(dockerfile, "a") as f:
+            f.write("".join(report_pass_config))
+
+        # backup previous built fuzzers
+        build_dir = f"{OSSFUZZ}/build/out/{self.project}"
+        if path.isdir(build_dir):
+            os.system(f"mv {build_dir} {build_dir}_bak")
+
+        self.build()
+
+        os.system(f"mv {dockerfile}.bak {dockerfile}")
+        shutil.rmtree(f"{OSSFUZZ}/projects/{self.project}/ReportFunctionExecutedPass")
 
     def mkdir_if_doesnt_exist(self):
         if not path.isdir(self.fuzzdir):
@@ -115,6 +144,7 @@ def main():
         choices=[
             "all",
             "build",
+            "build_w_pass",
             "fuzz",
             "postprocess",
             "summarize",
@@ -137,8 +167,14 @@ def main():
         dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
     elif args.pipeline == "build":
         dataset.build()
+    elif args.pipeline == "build_w_pass":
+        dataset.build_w_pass()
     elif args.pipeline == "fuzz":
         dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
+    elif args.pipeline == "postprocess":
+        dataset.build_w_pass()
+        # dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
+        # dataset.postprocess()
     else:
         unreachable("Unkown pipeline provided")
 
