@@ -142,7 +142,7 @@ class Project:
 
         info(f"Fuzzing all {len(bins_to_run)} binaries for {runtime} seconds")
         parallel_subprocess(
-            bins_to_run[:20],
+            bins_to_run,
             jobs,
             lambda r: run_one_fuzzer(r, runtime=runtime),
             on_exit=None,
