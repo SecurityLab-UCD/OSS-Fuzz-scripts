@@ -27,6 +27,8 @@ seeds
 samples.ffmpeg.org
 
 fuzz
+dump
+oom-*
 oss-fuzz
 *seeds
 
