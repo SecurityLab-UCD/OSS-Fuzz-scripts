@@ -7,7 +7,6 @@ from common import *
 
 def oss_fuzz_one_target(p, proj, fuzztime):
     target, fuzzout = p
-    "python infra/helper.py run_fuzzer qemu qemu-fuzz-i386-target-generic-fuzz-virtio-gpu  qemu-seeds"
     return subprocess.Popen(
         [
             "python3",
@@ -24,6 +23,17 @@ def oss_fuzz_one_target(p, proj, fuzztime):
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+
+
+def run_one_fuzzer(p, runtime):
+    target, corpus_dir, dump = p
+    cmd = [target, f"-max_total_time={runtime}"]
+    with open(dump, "w") as dumpfile:
+        return subprocess.Popen(
+            cmd,
+            stdout=dumpfile,
+            stderr=subprocess.DEVNULL,
+        )
 
 
 def convert_to_seconds(s: str) -> int:

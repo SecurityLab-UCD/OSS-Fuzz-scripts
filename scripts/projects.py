@@ -8,14 +8,20 @@ import argparse
 import warnings
 import shutil
 import yaml
-from util import oss_fuzz_one_target, convert_to_seconds
+from util import (
+    oss_fuzz_one_target,
+    convert_to_seconds,
+    run_one_fuzzer,
+)
 
 
 class Project:
-    def __init__(self, project: str, fuzzdir: str):
+    def __init__(self, project: str, fuzzdir: str, dumpdir: str):
         self.project = project
         self.fuzzdir = path.join(DETECTION_HOME, fuzzdir)
+        self.dumpdir = path.join(DETECTION_HOME, dumpdir)
         self.proj_fuzzout = path.join(self.fuzzdir, self.project)
+        self.proj_dumpout = path.join(self.dumpdir, self.project)
         self.targets: List[str] = []
         with open(f"{OSSFUZZ}/projects/{project}/project.yaml", "r") as f:
             self.config = yaml.safe_load(f)
@@ -59,14 +65,20 @@ class Project:
         if not path.isdir(self.proj_fuzzout):
             os.makedirs(self.proj_fuzzout)
 
+        if not path.isdir(self.dumpdir):
+            os.makedirs(self.dumpdir)
+
+        if not path.isdir(self.proj_dumpout):
+            os.makedirs(self.proj_dumpout)
+
         proj_crash = path.join(self.proj_fuzzout, "crashes")
         if not path.isdir(proj_crash):
             os.makedirs(proj_crash)
 
         for t in self.targets:
-            subdir = path.join(self.proj_fuzzout, str(t))
-            if not path.isdir(subdir):
-                os.makedirs(subdir)
+            fuzz_subdir = path.join(self.proj_fuzzout, str(t))
+            if not path.isdir(fuzz_subdir):
+                os.makedirs(fuzz_subdir)
 
     def _update_targets(self):
         bindir = path.join(OSSFUZZ, "build/out", self.project)
@@ -109,8 +121,32 @@ class Project:
         crash_dir = path.join(self.fuzzdir, self.project, "crashes")
         os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
 
-    def postprocess(self):
-        pass
+    def postprocess(self, runtime=1, jobs=CORES):
+        if not self.targets:
+            self._update_targets()
+
+        if not self.targets:
+            warning("no targets found, please build fuzzers first")
+
+        self.mkdir_if_doesnt_exist()
+
+        info("Collecting binaries to run")
+        bins_to_run: List[Tuple[str, str, str]] = []
+        for t in self.targets:
+            if "." in t:
+                continue
+            fuzzer = path.join(OSSFUZZ, "build", "out", self.project, t)
+            corpus = path.join(self.proj_fuzzout, t)
+            dump = path.join(self.proj_dumpout, f"{t}.json")
+            bins_to_run.append((fuzzer, corpus, dump))
+
+        info(f"Fuzzing all {len(bins_to_run)} binaries for {runtime} seconds")
+        parallel_subprocess(
+            bins_to_run[:20],
+            jobs,
+            lambda r: run_one_fuzzer(r, runtime=runtime),
+            on_exit=None,
+        )
 
     def summarize(self):
         pass
@@ -133,6 +169,12 @@ def main():
         default="fuzz",
     )
     parser.add_argument(
+        "--dumpout",
+        type=str,
+        help="directory to store JSON files for the IO dump",
+        default="dump",
+    )
+    parser.add_argument(
         "-j", "--jobs", type=int, help="Number of threads to use.", default=CORES
     )
     parser.add_argument(
@@ -153,6 +195,9 @@ def main():
     parser.add_argument(
         "-ft", "--fuzztime", type=str, help="Time to fuzz one program", default="1h"
     )
+    parser.add_argument(
+        "-rt", "--runtime", type=str, help="Time to run one program", default="1s"
+    )
 
     args = parser.parse_args()
 
@@ -160,7 +205,7 @@ def main():
     if args.dataset not in aviliable_porjects:
         unreachable("Unknown dataset provided.")
 
-    dataset = Project(args.dataset, args.fuzzout)
+    dataset = Project(args.dataset, args.fuzzout, args.dumpout)
 
     if args.pipeline == "all":
         dataset.build()
@@ -172,9 +217,7 @@ def main():
     elif args.pipeline == "fuzz":
         dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
     elif args.pipeline == "postprocess":
-        dataset.build_w_pass()
-        # dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
-        # dataset.postprocess()
+        dataset.postprocess(jobs=args.jobs, runtime=convert_to_seconds(args.runtime))
     else:
         unreachable("Unkown pipeline provided")
 
