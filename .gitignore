@@ -29,6 +29,7 @@ samples.ffmpeg.org
 fuzz
 dump
 oom-*
+slow-unit-*
 oss-fuzz
 *seeds
 

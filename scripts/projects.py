@@ -121,7 +121,7 @@ class Project:
         crash_dir = path.join(self.fuzzdir, self.project, "crashes")
         os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
 
-    def postprocess(self, runtime=1, jobs=CORES):
+    def fuzz_w_pass(self, runtime=1, jobs=CORES):
         if not self.targets:
             self._update_targets()
 
@@ -147,6 +147,9 @@ class Project:
             lambda r: run_one_fuzzer(r, runtime=runtime),
             on_exit=None,
         )
+
+    def postprocess(self):
+        pass
 
     def summarize(self):
         pass
@@ -188,7 +191,7 @@ def main():
             "build",
             "build_w_pass",
             "fuzz",
-            "postprocess",
+            "fuzz_w_pass" "postprocess",
             "summarize",
         ],
     )
@@ -216,8 +219,10 @@ def main():
         dataset.build_w_pass()
     elif args.pipeline == "fuzz":
         dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
+    elif args.pipeline == "fuzz_w_pass":
+        dataset.fuzz_w_pass(jobs=args.jobs, runtime=convert_to_seconds(args.runtime))
     elif args.pipeline == "postprocess":
-        dataset.postprocess(jobs=args.jobs, runtime=convert_to_seconds(args.runtime))
+        dataset.postprocess()
     else:
         unreachable("Unkown pipeline provided")
 

@@ -27,7 +27,13 @@ def oss_fuzz_one_target(p, proj, fuzztime):
 
 def run_one_fuzzer(p, runtime):
     target, corpus_dir, dump = p
-    cmd = [target, f"-max_total_time={runtime}"]
+    cmd = [
+        target,
+        "-rss_limit_mb=0",
+        f"-max_total_time={runtime}",
+        "--corpus-dir",
+        corpus_dir,
+    ]
     with open(dump, "w") as dumpfile:
         return subprocess.Popen(
             cmd,
