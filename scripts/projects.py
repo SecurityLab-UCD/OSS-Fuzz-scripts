@@ -39,7 +39,7 @@ class Project:
             f"rsync -av --exclude='.*' {OSSFUZZ_SCRIPTS_HOME}/ReportFunctionExecutedPass {OSSFUZZ}/projects/{self.project}"
         )
         report_pass_config = (
-            "ENV REPORT_PASS=$SRC/ffmpeg/ReportFunctionExecutedPass\n"
+            f"ENV REPORT_PASS=$SRC/{self.project}/ReportFunctionExecutedPass\n"
             "COPY build_w_pass.sh $SRC/build.sh\n"
             "COPY ReportFunctionExecutedPass $REPORT_PASS\n"
             "RUN cd $REPORT_PASS && ./init.sh\n"
