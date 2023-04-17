@@ -191,7 +191,8 @@ def main():
             "build",
             "build_w_pass",
             "fuzz",
-            "fuzz_w_pass" "postprocess",
+            "fuzz_w_pass",
+            "postprocess",
             "summarize",
         ],
     )
