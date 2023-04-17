@@ -18,8 +18,8 @@ from util import (
 class Project:
     def __init__(self, project: str, fuzzdir: str, dumpdir: str):
         self.project = project
-        self.fuzzdir = path.join(DETECTION_HOME, fuzzdir)
-        self.dumpdir = path.join(DETECTION_HOME, dumpdir)
+        self.fuzzdir = path.join(OSSFUZZ_SCRIPTS_HOME, fuzzdir)
+        self.dumpdir = path.join(OSSFUZZ_SCRIPTS_HOME, dumpdir)
         self.proj_fuzzout = path.join(self.fuzzdir, self.project)
         self.proj_dumpout = path.join(self.dumpdir, self.project)
         self.targets: List[str] = []
@@ -36,7 +36,7 @@ class Project:
         dockerfile = f"{OSSFUZZ}/projects/{self.project}/Dockerfile"
         os.system(f"cp {dockerfile} {dockerfile}.bak")
         os.system(
-            f"rsync -av --exclude='.*' {DETECTION_HOME}/ReportFunctionExecutedPass {OSSFUZZ}/projects/{self.project}"
+            f"rsync -av --exclude='.*' {OSSFUZZ_SCRIPTS_HOME}/ReportFunctionExecutedPass {OSSFUZZ}/projects/{self.project}"
         )
         report_pass_config = (
             "ENV REPORT_PASS=$SRC/ffmpeg/ReportFunctionExecutedPass\n"

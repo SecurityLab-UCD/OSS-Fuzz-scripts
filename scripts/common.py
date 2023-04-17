@@ -25,9 +25,9 @@ if CORES == None:
     CORES = multiprocessing.cpu_count()
     warning(f"CORES not set, default to all cores. (nproc = {CORES})")
 
-DETECTION_HOME = os.getenv("DETECTION_HOME")
-if DETECTION_HOME == None:
-    error("DETECTION_HOME not set, please tell me where the code is.")
+OSSFUZZ_SCRIPTS_HOME = os.getenv("OSSFUZZ_SCRIPTS_HOME")
+if OSSFUZZ_SCRIPTS_HOME == None:
+    error("OSSFUZZ_SCRIPTS_HOME not set, please tell me where the code is.")
     exit(1)
 
 __T = TypeVar("__T")

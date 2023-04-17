@@ -1,5 +1,5 @@
 
-# Which LLVM are we using?
+# get clang+llvm 14
 CLANG_LLVM=clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04
 
 # Download and install LLVM
@@ -12,15 +12,8 @@ if [ ! -d $LLVM ]; then
     mv $CLANG_LLVM clang+llvm14 
     ln -s clang+llvm14 clang+llvm 
 fi
+cd $OSSFUZZ_SCRIPTS_HOME
 
-
-if [ ! -d $OSSFUZZ ]; then
-    git clone https://github.com/SecurityLab-UCD/oss-fuzz.git
-fi
-
-if [ ! -d $REPORT_PASS ]; then
-    git clone https://github.com/SecurityLab-UCD/ReportFunctionExecutedPass.git
-fi
-cd $REPORT_PASS
-./init.sh
-cd ..
+# get oss-fuzz and ReportPass
+git submodule init
+git submodule update
