@@ -1,3 +1,6 @@
 [submodule "ReportFunctionExecutedPass"]
 	path = ReportFunctionExecutedPass
 	url = https://github.com/SecurityLab-UCD/ReportFunctionExecutedPass.git
+[submodule "oss-fuzz"]
+	path = oss-fuzz
+	url = https://github.com/SecurityLab-UCD/oss-fuzz.git

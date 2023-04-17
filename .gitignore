@@ -30,7 +30,6 @@ fuzz
 dump
 oom-*
 slow-unit-*
-oss-fuzz
 *seeds
 
 *.ipynb
