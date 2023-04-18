@@ -28,7 +28,7 @@ class Project:
 
     def build(self):
         os.system(
-            f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer none"
+            f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer none --clean"
         )
         self._update_targets()
 
