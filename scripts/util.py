@@ -31,8 +31,9 @@ def run_one_fuzzer(p, runtime):
         target,
         "-rss_limit_mb=0",
         f"-max_total_time={runtime}",
-        "--corpus-dir",
-        corpus_dir,
+        # todo: find a way for libFuzzer to run without refuzzing
+        # "--corpus-dir",
+        # corpus_dir,
     ]
     with open(dump, "w") as dumpfile:
         return subprocess.Popen(
