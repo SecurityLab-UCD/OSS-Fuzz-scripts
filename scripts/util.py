@@ -15,6 +15,7 @@ def oss_fuzz_one_target(p, proj, fuzztime):
             proj,
             target,
             f"\-max_total_time={fuzztime}",
+            "\-rss_limit_mb=0",
             "--engine",
             "libfuzzer",
             "--corpus-dir",
