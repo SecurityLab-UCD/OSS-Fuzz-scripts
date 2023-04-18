@@ -1,3 +1,4 @@
+pip3 install -r requirements.txt
 
 # get clang+llvm 14
 CLANG_LLVM=clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04
