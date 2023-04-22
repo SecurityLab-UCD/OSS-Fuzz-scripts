@@ -23,7 +23,8 @@ class Project:
         self.proj_fuzzout = path.join(self.fuzzdir, self.project)
         self.proj_dumpout = path.join(self.dumpdir, self.project)
         self.targets: List[str] = []
-        with open(f"{OSSFUZZ}/projects/{project}/project.yaml", "r") as f:
+        self.project_oss_dir = path.join(OSSFUZZ, "projects", self.project)
+        with open(f"{self.project_oss_dir}/project.yaml", "r") as f:
             self.config = yaml.safe_load(f)
 
     def build(self):
@@ -32,7 +33,7 @@ class Project:
         )
         self._update_targets()
 
-    def build_w_pass(self):
+    def build_w_pass(self, build_script: str = "build_w_pass.sh"):
         dockerfile = f"{OSSFUZZ}/projects/{self.project}/Dockerfile"
         os.system(f"cp {dockerfile} {dockerfile}.bak")
         os.system(
@@ -40,7 +41,7 @@ class Project:
         )
         report_pass_config = (
             f"ENV REPORT_PASS=$SRC/{self.project}/ReportFunctionExecutedPass\n"
-            "COPY build_w_pass.sh $SRC/build.sh\n"
+            f"COPY {build_script} $SRC/build.sh\n"
             "COPY ReportFunctionExecutedPass $REPORT_PASS\n"
             "RUN cd $REPORT_PASS && ./init.sh\n"
         )
@@ -154,6 +155,55 @@ class Project:
     def summarize(self):
         pass
 
+    def auto_build_w_pass(self, cpp: str):
+        """build a project with pass automaticly
+
+        Args:
+            cpp (str): stdc++ or c++
+        """
+        build_sh = path.join(self.project_oss_dir, "build.sh")
+        build_w_pass_sh = path.join(self.project_oss_dir, "build_w_pass.sh")
+        if path.isfile(build_w_pass_sh):
+            info("build_w_pass.sh already exists")
+            self.build_w_pass()
+            return
+
+        if not self._is_auto_supported():
+            warning(f"auto build is not supported for {self.config['language']}")
+            return
+
+        common_report_flags = [
+            'REPORT_FLAGS="-Xclang -load -Xclang $REPORT_PASS/libReportPass.so -flegacy-pass-manager"\n',
+            f'REPORTER_FLAGS="$REPORT_PASS/reporter.{cpp}.o -l{cpp} -pthread -lm"\n',
+            'export CFLAGS="${CFLAGS:=} $REPORT_FLAGS $REPORTER_FLAGS"\n',
+            'export CXXFLAGS="${CXXFLAGS:=} $REPORT_FLAGS $REPORTER_FLAGS"\n',
+        ]
+
+        with open(build_sh, "r") as f:
+            build_lines = f.readlines()
+
+        # todo: find better way to insert the flags
+        # for now, just hope this comment is build.sh
+        build_comment = f"# build {self.project}\n"
+        insertion_point = (
+            build_lines.index(build_comment) if build_comment in build_lines else 1
+        )
+        build_w_pass_lines = (
+            build_lines[:insertion_point]
+            + common_report_flags
+            + build_lines[insertion_point:]
+        )
+        with open(build_w_pass_sh, "w") as f:
+            f.writelines(build_w_pass_lines)
+
+        self.build_w_pass()
+        os.remove(build_w_pass_sh)
+
+    def _is_auto_supported(self):
+        lang = self.config["language"]
+        supported_langs = ["c", "cpp", "c++"]
+        return lang.lower() in supported_langs
+
 
 def main():
     parser = argparse.ArgumentParser(description="Build a dataset")
@@ -190,6 +240,7 @@ def main():
             "all",
             "build",
             "build_w_pass",
+            "auto_build_w_pass",
             "fuzz",
             "fuzz_w_pass",
             "postprocess",
@@ -201,6 +252,13 @@ def main():
     )
     parser.add_argument(
         "-rt", "--runtime", type=str, help="Time to run one program", default="1s"
+    )
+    parser.add_argument(
+        "--cpp",
+        type=str,
+        help="stdc++ or c++",
+        default="stdc++",
+        choices=["stdc++", "c++"],
     )
 
     args = parser.parse_args()
@@ -218,6 +276,8 @@ def main():
         dataset.build()
     elif args.pipeline == "build_w_pass":
         dataset.build_w_pass()
+    elif args.pipeline == "auto_build_w_pass":
+        dataset.auto_build_w_pass(cpp=args.cpp)
     elif args.pipeline == "fuzz":
         dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
     elif args.pipeline == "fuzz_w_pass":
