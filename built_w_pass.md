@@ -8,6 +8,6 @@ here is a list of projects we build successfully
 4. [libtiff](./oss-fuzz/projects/libtiff/build_w_pass.sh)
 5. [lua](./oss-fuzz/projects/lua/build_w_pass.sh)
 6. alembic (c++)
-
+7. [libpng](./oss-fuzz/projects/libpng/build_w_pass.sh)
 
 
