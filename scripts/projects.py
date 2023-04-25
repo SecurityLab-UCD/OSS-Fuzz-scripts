@@ -11,7 +11,6 @@ import yaml
 from util import (
     oss_fuzz_one_target,
     convert_to_seconds,
-    run_one_fuzzer,
 )
 
 
@@ -96,7 +95,7 @@ class Project:
             f for f in os.listdir(bindir) if not path.isdir(path.join(bindir, f))
         ]
 
-    def fuzz(self, jobs=CORES, fuzztime=3600):
+    def fuzz(self, jobs=CORES, fuzztime=3600, dump=False):
         if not self.targets:
             self._update_targets()
 
@@ -106,9 +105,15 @@ class Project:
         self.mkdir_if_doesnt_exist()
 
         info("Collecting binaries to fuzz")
-        bins_to_fuzz = [
-            (t, path.join(self.fuzzdir, self.project, t)) for t in self.targets
-        ]
+        bins_to_fuzz: List[Tuple[str, str, str]] = []
+        for t in self.targets:
+            if "." in t:
+                continue
+            fuzzout = path.join(self.fuzzdir, self.project, t)
+            dumpout = (
+                path.join(self.dumpdir, self.project, f"{t}.json") if dump else None
+            )
+            bins_to_fuzz.append((t, fuzzout, dumpout))
 
         info(f"Fuzzing all {len(bins_to_fuzz)} binaries for {fuzztime} seconds")
         parallel_subprocess(
@@ -120,34 +125,9 @@ class Project:
 
         # redirect all crashes
         crash_dir = path.join(self.fuzzdir, self.project, "crashes")
-        os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
-
-    def fuzz_w_pass(self, runtime=1, jobs=CORES):
-        if not self.targets:
-            self._update_targets()
-
-        if not self.targets:
-            warning("no targets found, please build fuzzers first")
-
-        self.mkdir_if_doesnt_exist()
-
-        info("Collecting binaries to run")
-        bins_to_run: List[Tuple[str, str, str]] = []
-        for t in self.targets:
-            if "." in t:
-                continue
-            fuzzer = path.join(OSSFUZZ, "build", "out", self.project, t)
-            corpus = path.join(self.proj_fuzzout, t)
-            dump = path.join(self.proj_dumpout, f"{t}.json")
-            bins_to_run.append((fuzzer, corpus, dump))
-
-        info(f"Fuzzing all {len(bins_to_run)} binaries for {runtime} seconds")
-        parallel_subprocess(
-            bins_to_run,
-            jobs,
-            lambda r: run_one_fuzzer(r, runtime=runtime),
-            on_exit=None,
-        )
+        outfiles = os.listdir(f"{OSSFUZZ}/build/out/{self.project}")
+        if any([f.startswith("crash-") for f in outfiles]):
+            os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
 
     def postprocess(self):
         pass
@@ -281,7 +261,9 @@ def main():
     elif args.pipeline == "fuzz":
         dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
     elif args.pipeline == "fuzz_w_pass":
-        dataset.fuzz_w_pass(jobs=args.jobs, runtime=convert_to_seconds(args.runtime))
+        dataset.fuzz(
+            jobs=args.jobs, runtime=convert_to_seconds(args.runtime), dump=True
+        )
     elif args.pipeline == "postprocess":
         dataset.postprocess()
     else:
