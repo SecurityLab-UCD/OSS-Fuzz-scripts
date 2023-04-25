@@ -228,10 +228,7 @@ def main():
         ],
     )
     parser.add_argument(
-        "-ft", "--fuzztime", type=str, help="Time to fuzz one program", default="1h"
-    )
-    parser.add_argument(
-        "-rt", "--runtime", type=str, help="Time to run one program", default="1s"
+        "-ft", "--fuzztime", type=str, help="Time to fuzz one program", default="1m"
     )
     parser.add_argument(
         "--cpp",
@@ -261,8 +258,9 @@ def main():
     elif args.pipeline == "fuzz":
         dataset.fuzz(jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime))
     elif args.pipeline == "fuzz_w_pass":
+        info("fuzzing with pass, please make sure you have built the project with pass")
         dataset.fuzz(
-            jobs=args.jobs, runtime=convert_to_seconds(args.runtime), dump=True
+            jobs=args.jobs, fuzztime=convert_to_seconds(args.fuzztime), dump=True
         )
     elif args.pipeline == "postprocess":
         dataset.postprocess()
