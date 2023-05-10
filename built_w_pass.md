@@ -7,7 +7,7 @@ Here is a list of projects we build successfully (Projects with a link were manu
 3. [json-c](./oss-fuzz/projects/json-c/build_w_pass.sh)
 4. [libtiff](./oss-fuzz/projects/libtiff/build_w_pass.sh)
 5. [lua](./oss-fuzz/projects/lua/build_w_pass.sh)
-6. alembic (c++)
+6. alembic (auto_build_w_pass c++)
 7. [libpng](./oss-fuzz/projects/libpng/build_w_pass.sh)
 8. openssh (auto_build_w_pass c++)
 9. mongoose (auto_build_w_pass c++)
