@@ -92,7 +92,9 @@ class Project:
         # we will just take any file thats not a directory
         # if any of collected files is not actually a fuzzer, the result corpus dir will be just empty
         self.targets = [
-            f for f in os.listdir(bindir) if not path.isdir(path.join(bindir, f))
+            f
+            for f in os.listdir(bindir)
+            if not path.isdir(path.join(bindir, f)) and f != "llvm-symbolizer"
         ]
 
     def fuzz(self, jobs=CORES, fuzztime=3600, dump=False):
@@ -110,9 +112,7 @@ class Project:
             if "." in t:
                 continue
             fuzzout = path.join(self.fuzzdir, self.project, t)
-            dumpout = (
-                path.join(self.dumpdir, self.project, f"{t}.json") if dump else None
-            )
+            dumpout = t + ".json" if dump else None
             bins_to_fuzz.append((t, fuzzout, dumpout))
 
         info(f"Fuzzing all {len(bins_to_fuzz)} binaries for {fuzztime} seconds")

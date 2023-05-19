@@ -24,18 +24,17 @@ def oss_fuzz_one_target(
         fuzzout,
     ]
 
-    if dump is None:
-        job = subprocess.Popen(
-            cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-    else:
-        # todo: change mode to "a" if a fuzzer has multiple dump
-        with open(dump, "w") as dumpfile:
-            job = subprocess.Popen(
-                cmd,
-                stdout=dumpfile,
-                stderr=subprocess.DEVNULL,
-            )
+    if dump is not None:
+        cmd += [
+            "-e",
+            f"DUMP_FILE_NAME={dump}",
+        ]
+
+    job = subprocess.Popen(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     return job
 
 
