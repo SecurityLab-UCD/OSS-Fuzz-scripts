@@ -128,6 +128,13 @@ class Project:
         outfiles = os.listdir(f"{OSSFUZZ}/build/out/{self.project}")
         if any([f.startswith("crash-") for f in outfiles]):
             os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
+            
+        # redirect all dumps from oss-fuzz workdir
+        if dump:
+            dump_dir = path.join(self.dumpdir, self.project)
+            outfiles = os.listdir(f"{OSSFUZZ}/build/out/{self.project}")
+            if any([f.endswith(".json") for f in outfiles]):
+                os.system(f"mv {OSSFUZZ}/build/out/{self.project}/*.json {dump_dir}")
 
     def postprocess(self):
         pass
