@@ -6,13 +6,13 @@ import docker
 import ctypes
 import cpp_demangle
 
-proj_name = 'eigen'
+proj_name = 'tmux'
 json_path = '../dump/'+proj_name
 json_file_names = [f for f in os.listdir(json_path) if f.endswith('.json')]
 print('Looking for json file: ',json_file_names)
 cnt=0
 
-def extract_func_code(func_name, code_content):
+def extract_func_code(func_name, code_content, if_c_code=True):
     # init regular expression
     try:
         # Transliteration special characters
@@ -20,12 +20,16 @@ def extract_func_code(func_name, code_content):
         pattern = r"[\[\].,{}()\W_]"
         # Replace special characters with \ ahead of themselves
         func_name = re.sub(pattern, r"\\\g<0>", func_name)
-        match_func_init = re.search(".*"+func_name,code_content)
+        # If C code, there is no parphsis in the func_name, so it need to manually add it
+        if if_c_code:
+            match_func_init = re.search(".*"+func_name+'[^;]*\).*\{\n',code_content)
+        else:
+            match_func_init = re.search(".*"+func_name+'[^;]*\n',code_content)
     except:
         print("The function ", ori_func_name, " can not use regression expression, ignore first")
         return f"ERROR: No match function '{ori_func_name}' found"
     if match_func_init:
-        func_init, func_start = match_func_init.group(), match_func_init.end()
+        func_init, func_start = match_func_init.group(), match_func_init.end()-3
     else:
         #raise ValueError(f"No match found")
         print(f"ERROR: No match function '{ori_func_name}' found")
@@ -80,38 +84,50 @@ def get_source_code(file_path, file_name):
     image = client.images.get('gcr.io/oss-fuzz/'+proj_name+':latest')
     container=client.containers.run(image,detach=True)
     # The docker does not support regular expression, brute force try
+
+    #check file_path, it may not the absolut path
+    if not '/' in file_path:
+        file_path='/src/'+proj_name+'/'+file_path
     try:
-        # try .c file and json path first
-        # print('looking source code in path:', file_path+'.c')
-        #Todo list of名字 正则表达
         code_content = ''
-        for chunk in container.get_archive(file_path+'.c')[0]:
+        for chunk in container.get_archive(file_path)[0]:
             code_content+=chunk.decode('utf-8')
     except:
-        try: 
-            # try .cc file and json path first
-            # print('looking source code in path:', file_path+'.cc')
-            code_content = ''
-            for chunk in container.get_archive(file_path+'.cc')[0]:
-                code_content+=chunk.decode('utf-8')
-        except:
-            try:
-                # the .c and json file did not provide the path
-                # print('looking source code in path:', '/src/'+proj_name+'/'+file_name+'.c')
-                code_content = ''
-                for chunk in container.get_archive('/src/'+proj_name+'/'+file_name+'.c')[0]:
-                    code_content+=chunk.decode('utf-8')
-            except:
-                try:
-                    # the .c and json file did not provide the path
-                    # print('looking source code in path:', '/src/'+proj_name+'/'+file_name+'.cc')
-                    code_content = ''
-                    for chunk in container.get_archive('/src/'+proj_name+'/'+file_name+'.cc')[0]:
-                        code_content+=chunk.decode('utf-8')
-                except:
-                    code_content='ERROR'
-                    print('ERROR: File '+file_path+'.c*'+" NOT found")
-                    print()
+        code_content='ERROR'
+        print('ERROR: File '+file_path+" NOT found")
+        print()
+    # try:
+    #     # try .c file and json path first
+    #     # print('looking source code in path:', file_path+'.c')
+    #     #Todo list of名字 正则表达
+    #     code_content = ''
+    #     for chunk in container.get_archive(file_path+'.c')[0]:
+    #         code_content+=chunk.decode('utf-8')
+    # except:
+    #     try: 
+    #         # try .cc file and json path first
+    #         # print('looking source code in path:', file_path+'.cc')
+    #         code_content = ''
+    #         for chunk in container.get_archive(file_path+'.cc')[0]:
+    #             code_content+=chunk.decode('utf-8')
+    #     except:
+    #         try:
+    #             # the .c and json file did not provide the path
+    #             # print('looking source code in path:', '/src/'+proj_name+'/'+file_name+'.c')
+    #             code_content = ''
+    #             for chunk in container.get_archive('/src/'+proj_name+'/'+file_name+'.c')[0]:
+    #                 code_content+=chunk.decode('utf-8')
+    #         except:
+    #             try:
+    #                 # the .c and json file did not provide the path
+    #                 # print('looking source code in path:', '/src/'+proj_name+'/'+file_name+'.cc')
+    #                 code_content = ''
+    #                 for chunk in container.get_archive('/src/'+proj_name+'/'+file_name+'.cc')[0]:
+    #                     code_content+=chunk.decode('utf-8')
+    #             except:
+    #                 code_content='ERROR'
+    #                 print('ERROR: File '+file_path+'.c*'+" NOT found")
+    #                 print()
     # Stop and remove the container
     container.stop()
     container.remove()
@@ -139,27 +155,29 @@ for json_file_name in json_file_names:
                 print('ERROR: ',json_file_name, "Json file illegal")
                 continue
     print('NUMBER OF FUNCTION: ',len(data))
-    cnt=-1
-    code_content = ''
-    for file_func_name in data:
-        cnt+=1
-        if cnt%100==0:
+    pre_file_path,code_content = '',''
+    for cnt in range(len(data)):
+        file_func_name = ''
+        for file_func_name_ in data[cnt]:
+            file_func_name=file_func_name_
+        if cnt>0 and cnt%100==0:
             print('DONE function',cnt,' ',file_func_name)
+        
         # if split not matched, need to add a check
-        splited_file_func_name = file_func_name.split(file_name)
+        splited_file_func_name = file_func_name.split('?')
         if len(splited_file_func_name)<2:
             print(f"ERROR: file_func_name->'{file_func_name}' in '{file_name}'.json file incorrect can not split")
             continue
         else:
-            file_path,mangle_func_name,flag=[],[],1
-            for i in splited_file_func_name:
-                if flag and '/' in i:
-                    file_path.append(i)
-                else:
-                    flag=0
-                    mangle_func_name.append(i)
-            file_path = (file_name).join(file_path)+file_name
-            mangle_func_name = (file_name).join(mangle_func_name)
+            file_path,mangle_func_name=splited_file_func_name[0],splited_file_func_name[1]
+            # for i in splited_file_func_name:
+            #     if flag and '/' in i:
+            #         file_path.append(i)
+            #     else:
+            #         flag=0
+            #         mangle_func_name.append(i)
+            # file_path = (file_name).join(file_path)+file_name
+            # mangle_func_name = (file_name).join(mangle_func_name)
             # demangle mangle_func_name
             # demangle_func_name = demangle_func(mangle_func_name)
             # if this is c file then the mangle does not exist
@@ -170,21 +188,26 @@ for json_file_name in json_file_names:
             
             if demangle_func_name=='': # mangle_func_name == demangle_func_name
                 print('ERROR: '+mangle_func_name+' demangle incorrect or unable to demangle')
-                data[file_func_name] = 'ERROR: '+mangle_func_name+' demangle incorrect or unable to demangle'
+                data[cnt][file_func_name] = 'ERROR: '+mangle_func_name+' demangle incorrect or unable to demangle'
             else:
                 func_name = demangle_func_name.split('(')[0]
                 # Try to get code_content, the json file may provide the path or not
-                # only get once
-                if cnt==0:
+                # only get code when pre_file_path!=file_path
+                if pre_file_path!=file_path:
                     code_content = get_source_code(file_path, file_name)
+                    pre_file_path=file_path
+                    print("Open source file: ",pre_file_path)
+                    with open('./output/'+proj_name+'/'+json_file_name+'.txt', "w") as fi:
+                        # write to JSON file
+                        fi.write(code_content)
                 if code_content =='ERROR' or code_content=='':
                     print("CODE content ERROR")
                     break
                     continue
                 func_content = extract_func_code(func_name,code_content)
                 # write to json
-                data[file_func_name] = func_content
+                data[cnt][file_func_name] = {'code':func_content,'data': data[cnt][file_func_name]}
     # open the file for writing
-    with open('./'+json_file_name, "w") as json_file:
+    with open('./output/'+proj_name+'/'+json_file_name, "w") as json_file:
         # write to JSON file
         json.dump(data, json_file)
