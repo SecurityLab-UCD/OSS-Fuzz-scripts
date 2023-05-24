@@ -92,38 +92,6 @@ def get_source_code(file_path: str, file_name: str, proj_name: str):
     except docker.errors.NotFound:
         code_content = "ERROR"
         warning(f"ERROR: File  {file_path}  NOT found\n")
-    # try:
-    #     # try .c file and json path first
-    #     # print('looking source code in path:', file_path+'.c')
-    #     #Todo list of名字 正则表达
-    #     code_content = ''
-    #     for chunk in container.get_archive(file_path+'.c')[0]:
-    #         code_content+=chunk.decode('utf-8')
-    # except:
-    #     try:
-    #         # try .cc file and json path first
-    #         # print('looking source code in path:', file_path+'.cc')
-    #         code_content = ''
-    #         for chunk in container.get_archive(file_path+'.cc')[0]:
-    #             code_content+=chunk.decode('utf-8')
-    #     except:
-    #         try:
-    #             # the .c and json file did not provide the path
-    #             # print('looking source code in path:', '/src/'+proj_name+'/'+file_name+'.c')
-    #             code_content = ''
-    #             for chunk in container.get_archive('/src/'+proj_name+'/'+file_name+'.c')[0]:
-    #                 code_content+=chunk.decode('utf-8')
-    #         except:
-    #             try:
-    #                 # the .c and json file did not provide the path
-    #                 # print('looking source code in path:', '/src/'+proj_name+'/'+file_name+'.cc')
-    #                 code_content = ''
-    #                 for chunk in container.get_archive('/src/'+proj_name+'/'+file_name+'.cc')[0]:
-    #                     code_content+=chunk.decode('utf-8')
-    #             except:
-    #                 code_content='ERROR'
-    #                 print('ERROR: File '+file_path+'.c*'+" NOT found")
-    #                 print()
     # Stop and remove the container
     container.stop()
     container.remove()
@@ -177,63 +145,47 @@ def main():
 
             # if split not matched, need to add a check
             splited_file_func_name = file_func_name.split("?")
-            if len(splited_file_func_name) < 2:
-                warning(
-                    f"ERROR: file_func_name->'{file_func_name}' in '{file_name}'.json file incorrect can not split"
-                )
-                continue
-            else:
-                file_path, mangle_func_name = (
-                    splited_file_func_name[0],
-                    splited_file_func_name[1],
-                )
-                # for i in splited_file_func_name:
-                #     if flag and '/' in i:
-                #         file_path.append(i)
-                #     else:
-                #         flag=0
-                #         mangle_func_name.append(i)
-                # file_path = (file_name).join(file_path)+file_name
-                # mangle_func_name = (file_name).join(mangle_func_name)
-                # demangle mangle_func_name
-                # demangle_func_name = demangle_func(mangle_func_name)
-                # if this is c file then the mangle does not exist
-                try:
-                    demangle_func_name = cpp_demangle.demangle(mangle_func_name)
-                except ValueError:
-                    demangle_func_name = mangle_func_name
+            file_path, mangle_func_name = (
+                splited_file_func_name[0],
+                splited_file_func_name[1],
+            )
+            # if this is c file then the mangle does not exist
+            try:
+                demangle_func_name = cpp_demangle.demangle(mangle_func_name)
+            except ValueError:
+                demangle_func_name = mangle_func_name
 
-                if demangle_func_name == "":  # mangle_func_name == demangle_func_name
-                    warning(
-                        f"ERROR: {mangle_func_name} demangle incorrect or unable to demangle"
-                    )
-                    data[cnt][file_func_name] = (
-                        "ERROR: "
-                        + mangle_func_name
-                        + " demangle incorrect or unable to demangle"
-                    )
-                else:
-                    func_name = demangle_func_name.split("(")[0]
-                    # Try to get code_content, the json file may provide the path or not
-                    # only get code when pre_file_path!=file_path
-                    if pre_file_path != file_path:
-                        code_content = get_source_code(file_path, file_name, proj_name)
-                        pre_file_path = file_path
-                        info(f"Open source file: {pre_file_path}")
-                        with open(
-                            "./output/" + proj_name + "/" + json_file_name + ".txt", "w"
-                        ) as fi:
-                            # write to JSON file
-                            fi.write(code_content)
-                    if code_content == "ERROR" or code_content == "":
-                        warning("CODE content ERROR")
-                        break
-                    func_content = extract_func_code(func_name, code_content, True)
-                    # write to json
-                    data[cnt][file_func_name] = {
-                        "code": func_content,
-                        "data": data[cnt][file_func_name],
-                    }
+            if demangle_func_name == "":  # mangle_func_name == demangle_func_name
+                warning(
+                    f"ERROR: {mangle_func_name} demangle incorrect or unable to demangle"
+                )
+                data[cnt][file_func_name] = (
+                    "ERROR: "
+                    + mangle_func_name
+                    + " demangle incorrect or unable to demangle"
+                )
+            else:
+                func_name = demangle_func_name.split("(")[0]
+                # Try to get code_content, the json file may provide the path or not
+                # only get code when pre_file_path!=file_path
+                if pre_file_path != file_path:
+                    code_content = get_source_code(file_path, file_name, proj_name)
+                    pre_file_path = file_path
+                    info(f"Open source file: {pre_file_path}")
+                    with open(
+                        "./output/" + proj_name + "/" + json_file_name + ".txt", "w"
+                    ) as fi:
+                        # write to JSON file
+                        fi.write(code_content)
+                if code_content == "ERROR" or code_content == "":
+                    warning("CODE content ERROR")
+                    break
+                func_content = extract_func_code(func_name, code_content, True)
+                # write to json
+                data[cnt][file_func_name] = {
+                    "code": func_content,
+                    "data": data[cnt][file_func_name],
+                }
         # open the file for writing
         with open("./output/" + proj_name + "/" + json_file_name, "w") as json_file:
             # write to JSON file
