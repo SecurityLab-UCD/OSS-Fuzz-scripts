@@ -7,9 +7,13 @@ import ctypes
 from logging import error, info, warning
 import cpp_demangle
 import argparse
+from typing import Optional, Union
+from common import OSSFUZZ_SCRIPTS_HOME
 
 
-def extract_func_code(func_name: str, code_content: str, if_c_code: bool):
+def extract_func_code(
+    func_name: str, code_content: str, if_c_code: bool
+) -> Optional[str]:
     # Transliteration special characters
     ori_func_name = func_name
     pattern = r"[\[\].,{}()\W_]"
@@ -19,9 +23,10 @@ def extract_func_code(func_name: str, code_content: str, if_c_code: bool):
     if if_c_code:
         match_func_init = re.search(".*" + func_name + "[^;]*\).*\{\n", code_content)
     else:
-        match_func_init = re.search(".*" + func_name + "[^;]*\n", code_content)
-    # Finded match
+        match_func_init = re.search(f".*{func_name}[^;]*\n", code_content)
+    # Found match
     if match_func_init:
+        # The regular expression end with {\n, thus I need to move ahead three char to get the full function namespace.
         func_init, func_start = match_func_init.group(), match_func_init.end() - 3
     else:
         warning(f"ERROR: No match function {ori_func_name} found")
@@ -47,7 +52,7 @@ def extract_func_code(func_name: str, code_content: str, if_c_code: bool):
     return func_init + function_code
 
 
-def demangle_func(func: str):
+def demangle_func(func: str) -> Optional[str]:
     # Load the C++ Standard Library
     libcxx = ctypes.cdll.LoadLibrary("libc++.so.1")
     # Define the signature of the __cxa_demangle() function
@@ -77,7 +82,7 @@ def demangle_func(func: str):
 
 
 # get source code from docker
-def get_source_code(file_path: str, file_name: str, proj_name: str):
+def get_source_code(file_path: str, file_name: str, proj_name: str) -> Optional[str]:
     # Create a container from the image
     client = docker.from_env()
     image = client.images.get("gcr.io/oss-fuzz/" + proj_name + ":latest")
@@ -110,7 +115,6 @@ def main():
     )
     args = parser.parse_args()
     proj_name = args.name
-    OSSFUZZ_SCRIPTS_HOME = ".."
     json_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "dump", proj_name)
     json_file_names = [f for f in os.listdir(json_path) if f.endswith(".json")]
     info(f"Looking for json file: {json_file_names}")
