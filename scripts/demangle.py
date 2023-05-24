@@ -128,20 +128,8 @@ def main():
             try:
                 data = json.load(f)
             except json.JSONDecodeError:
-                try:
-                    # the json file start with path, reopen the json file
-                    with open(json_path + "/" + json_file_name, "r") as f:
-                        json_content, flag = "", 0
-                        for line in f:
-                            if flag:
-                                json_content += line
-                            elif line[0] == "{":
-                                json_content += line
-                                flag = 1
-                        data = json.loads(json_content)
-                except json.JSONDecodeError as e:
-                    warning(f"ERROR: {json_file_name}  Json file illegal")
-                    continue
+                warning(f"ERROR: {json_file_name}  Json file illegal")
+                continue
         info(f"NUMBER OF FUNCTION: {len(data)}")
         pre_file_path, code_content = "", ""
         for cnt in range(len(data)):
