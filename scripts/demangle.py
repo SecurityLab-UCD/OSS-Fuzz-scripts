@@ -21,7 +21,9 @@ def extract_func_code(
     func_name = re.sub(pattern, r"\\\g<0>", func_name)
     # If C code, there is no parphsis in the func_name, so it need to manually add it
     if if_c_code:
-        match_func_init = re.search(".*" + func_name + "[^;]*\).*\{\n", code_content)
+        match_func_init = re.search(
+            f"(?:.*\n|.*){func_name}\s*\([^;]*\)(?:\s*|\n)\\{{\n", code_content
+        )
     else:
         match_func_init = re.search(f".*{func_name}[^;]*\n", code_content)
     # Found match
