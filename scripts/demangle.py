@@ -25,7 +25,7 @@ def extract_func_code(func_name: str, code_content: str, if_c_code: bool):
         func_init, func_start = match_func_init.group(), match_func_init.end() - 3
     else:
         warning(f"ERROR: No match function {ori_func_name} found")
-        return f"ERROR: No match function {ori_func_name} found"
+        return ""
 
     func_now, open_braces, flag = func_start, 0, 1
 
@@ -41,9 +41,7 @@ def extract_func_code(func_name: str, code_content: str, if_c_code: bool):
         warning(
             f"ERROR: Malformed function definition for '{ori_func_name}' in code file"
         )
-        return (
-            f"ERROR: Malformed function definition for '{ori_func_name}' in code file"
-        )
+        return ""
 
     function_code = code_content[func_start:func_now]
     return func_init + function_code
@@ -144,7 +142,8 @@ def main():
     )
     args = parser.parse_args()
     proj_name = args.name
-    json_path = "../dump/" + proj_name
+    OSSFUZZ_SCRIPTS_HOME = ".."
+    json_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "dump", proj_name)
     json_file_names = [f for f in os.listdir(json_path) if f.endswith(".json")]
     info(f"Looking for json file: {json_file_names}")
 
