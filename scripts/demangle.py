@@ -164,9 +164,12 @@ def main():
                     )
                     pre_file_path = file_path
                     info(f"Open source file: {pre_file_path}")
-                    if not os.path.exists(f"./output/{proj_name}/"):
-                        os.mkdir(f"./output/{proj_name}/")
-                    with open(f"./output/{proj_name}/{json_file_name}.txt", "w") as fi:
+                    output_path = os.path.join(
+                        OSSFUZZ_SCRIPTS_HOME, "output", proj_name
+                    )
+                    if not os.path.exists(output_path):
+                        os.mkdir(output_path)
+                    with open(f"{output_path}/{json_file_name}.txt", "w") as fi:
                         # write to JSON file
                         fi.write(code_content)
                 if code_content == "ERROR" or code_content == "":
@@ -181,7 +184,7 @@ def main():
                 }
         # open the file for writing
         with open(
-            os.path.join("./output", proj_name, json_file_name), "w"
+            os.path.join(OSSFUZZ_SCRIPTS_HOME, "output", proj_name, json_file_name), "w"
         ) as json_file:
             # write to JSON file
             json.dump(data, json_file)
