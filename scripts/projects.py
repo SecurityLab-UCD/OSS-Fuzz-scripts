@@ -4,6 +4,7 @@ import os
 from typing import List, Tuple
 from logging import error, info, warning
 from functools import partial, reduce
+from demangle import extract_func_code, demangle_func, get_source_from_docker
 import argparse
 import warnings
 import json
@@ -142,7 +143,81 @@ class Project:
                 os.system(f"mv {OSSFUZZ}/build/out/{self.project}/*.json {dump_dir}")
 
     def postprocess(self):
-        pass
+        proj_name = self.project
+        json_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "dump", proj_name)
+        json_file_names = [f for f in os.listdir(json_path) if f.endswith(".json")]
+        info(f"Looking for json file: {json_file_names}")
+
+        for json_file_name in json_file_names:
+            file_name = json_file_name.split(".json")[0]
+            # open Json file and get filename+func_name
+            with open(os.path.join(json_path, json_file_name), "r") as f:
+                try:
+                    data = json.load(f)
+                except json.JSONDecodeError:
+                    warning(f" {json_file_name}  Json file illegal")
+                    continue
+            info(f"NUMBER OF FUNCTION: {len(data)}")
+            pre_file_path, code_content = "", ""
+            for cnt in range(len(data)):
+                file_func_name = ""
+                for file_func_name_ in data[cnt]:
+                    file_func_name = file_func_name_
+
+                # if split not matched, need to add a check
+                splited_file_func_name = file_func_name.split("?")
+                file_path, mangle_func_name = (
+                    splited_file_func_name[0],
+                    splited_file_func_name[1],
+                )
+                # if this is c file then the mangle does not exist
+                try:
+                    demangle_func_name = cpp_demangle.demangle(mangle_func_name)
+                except ValueError:
+                    demangle_func_name = mangle_func_name
+
+                if demangle_func_name == "":  # mangle_func_name == demangle_func_name
+                    warning(
+                        f" {mangle_func_name} demangle incorrect or unable to demangle"
+                    )
+                    data[cnt][
+                        file_func_name
+                    ] = f" {mangle_func_name}demangle incorrect or unable to demangle"
+                else:
+                    func_name = demangle_func_name.split("(")[0]
+                    # Try to get code_content, the json file may provide the path or not
+                    # only get code when pre_file_path!=file_path
+                    if pre_file_path != file_path:
+                        code_content = get_source_from_docker(
+                            file_path, file_name, proj_name
+                        )
+                        pre_file_path = file_path
+                        info(f"Open source file: {pre_file_path}")
+                        output_path = os.path.join(
+                            OSSFUZZ_SCRIPTS_HOME, "output", proj_name
+                        )
+                        if not os.path.exists(output_path):
+                            os.mkdir(output_path)
+                        with open(f"{output_path}/{json_file_name}.txt", "w") as fi:
+                            # write to JSON file
+                            fi.write(code_content)
+                    if code_content == "ERROR" or code_content == "":
+                        error(f"{json_file_name} CODE content ERROR")
+                        pre_file_path = f"try again {cnt}"
+                        continue
+                    func_content = extract_func_code(func_name, code_content, True)
+                    # write to json
+                    data[cnt][file_func_name] = {
+                        "code": func_content,
+                        "data": data[cnt][file_func_name],
+                    }
+            # open the file for writing
+            with open(
+                os.path.join(OSSFUZZ_SCRIPTS_HOME, "output", proj_name, json_file_name),
+                "w",
+            ) as json_file:
+                # write to JSON file
+                json.dump(data, json_file)
 
     def get_project_stats(self) -> pd.DataFrame:
         def analyze_fuzzer(fname: str) -> FuzzerStats:
