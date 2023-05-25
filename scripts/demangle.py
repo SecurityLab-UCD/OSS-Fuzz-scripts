@@ -31,7 +31,7 @@ def extract_func_code(
         # The regular expression end with {\n, thus I need to move ahead three char to get the full function namespace.
         func_init, func_start = match_func_init.group(), match_func_init.end() - 3
     else:
-        warning(f"ERROR: No match function {ori_func_name} found")
+        warning(f" No match function {ori_func_name} found")
         return ""
 
     func_now, open_braces, flag = func_start, 0, 1
@@ -45,9 +45,7 @@ def extract_func_code(
         func_now += 1
 
     if open_braces > 0:
-        warning(
-            f"ERROR: Malformed function definition for '{ori_func_name}' in code file"
-        )
+        warning(f" Malformed function definition for '{ori_func_name}' in code file")
         return ""
 
     function_code = code_content[func_start:func_now]
@@ -84,7 +82,9 @@ def demangle_func(func: str) -> Optional[str]:
 
 
 # get source code from docker
-def get_source_code(file_path: str, file_name: str, proj_name: str) -> Optional[str]:
+def get_source_from_docker(
+    file_path: str, file_name: str, proj_name: str
+) -> Optional[str]:
     # Create a container from the image
     client = docker.from_env()
     image = client.images.get("gcr.io/oss-fuzz/" + proj_name + ":latest")
@@ -98,7 +98,7 @@ def get_source_code(file_path: str, file_name: str, proj_name: str) -> Optional[
             code_content += chunk.decode("utf-8")
     except docker.errors.NotFound:
         code_content = "ERROR"
-        warning(f"ERROR: File  {file_path}  NOT found\n")
+        error(f" File  {file_path}  NOT found\n")
     # Stop and remove the container
     container.stop()
     container.remove()
@@ -128,7 +128,7 @@ def main():
             try:
                 data = json.load(f)
             except json.JSONDecodeError:
-                warning(f"ERROR: {json_file_name}  Json file illegal")
+                warning(f" {json_file_name}  Json file illegal")
                 continue
         info(f"NUMBER OF FUNCTION: {len(data)}")
         pre_file_path, code_content = "", ""
@@ -150,30 +150,29 @@ def main():
                 demangle_func_name = mangle_func_name
 
             if demangle_func_name == "":  # mangle_func_name == demangle_func_name
-                warning(
-                    f"ERROR: {mangle_func_name} demangle incorrect or unable to demangle"
-                )
-                data[cnt][file_func_name] = (
-                    "ERROR: "
-                    + mangle_func_name
-                    + " demangle incorrect or unable to demangle"
-                )
+                warning(f" {mangle_func_name} demangle incorrect or unable to demangle")
+                data[cnt][
+                    file_func_name
+                ] = f" {mangle_func_name}demangle incorrect or unable to demangle"
             else:
                 func_name = demangle_func_name.split("(")[0]
                 # Try to get code_content, the json file may provide the path or not
                 # only get code when pre_file_path!=file_path
                 if pre_file_path != file_path:
-                    code_content = get_source_code(file_path, file_name, proj_name)
+                    code_content = get_source_from_docker(
+                        file_path, file_name, proj_name
+                    )
                     pre_file_path = file_path
                     info(f"Open source file: {pre_file_path}")
-                    with open(
-                        "./output/" + proj_name + "/" + json_file_name + ".txt", "w"
-                    ) as fi:
+                    if not os.path.exists(f"./output/{proj_name}/"):
+                        os.mkdir(f"./output/{proj_name}/")
+                    with open(f"./output/{proj_name}/{json_file_name}.txt", "w") as fi:
                         # write to JSON file
                         fi.write(code_content)
                 if code_content == "ERROR" or code_content == "":
-                    warning("CODE content ERROR")
-                    break
+                    error(f"{json_file_name} CODE content ERROR")
+                    pre_file_path = f"try again {cnt}"
+                    continue
                 func_content = extract_func_code(func_name, code_content, True)
                 # write to json
                 data[cnt][file_func_name] = {
