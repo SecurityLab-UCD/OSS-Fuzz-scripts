@@ -11,31 +11,32 @@ from typing import Optional, Union
 from common import OSSFUZZ_SCRIPTS_HOME
 
 
+# Extract specific function
 def extract_func_code(
     func_name: str, code_content: str, if_c_code: bool
 ) -> Optional[str]:
-    # Transliteration special characters
     ori_func_name = func_name
+    # Transliteration special characterss, replace special characters with \ ahead of themselves
     pattern = r"[\[\].,{}()\W_]"
-    # Replace special characters with \ ahead of themselves
     func_name = re.sub(pattern, r"\\\g<0>", func_name)
-    # If C code, there is no parphsis in the func_name, so it need to manually add it
+    # If C code, there is no demangle process, only have function name
+    # Thus manually add parphsis to match the function
     if if_c_code:
+        # Searching string that start with anything followed with function name+()+{
         match_func_init = re.search(
             f"(?:.*\n|.*){func_name}\s*\([^;]*\)(?:\s*|\n)\\{{\n", code_content
         )
     else:
         match_func_init = re.search(f".*{func_name}[^;]*\n", code_content)
-    # Found match
+    # If found matched function
     if match_func_init:
         # The regular expression end with {\n, thus I need to move ahead three char to get the full function namespace.
         func_init, func_start = match_func_init.group(), match_func_init.end() - 3
     else:
         warning(f" No match function {ori_func_name} found")
         return ""
-
+    # Match braces to get function code
     func_now, open_braces, flag = func_start, 0, 1
-
     while (open_braces > 0 or flag) and func_now < len(code_content):
         if code_content[func_now] == "{":
             open_braces += 1
@@ -43,11 +44,11 @@ def extract_func_code(
         elif code_content[func_now] == "}":
             open_braces -= 1
         func_now += 1
-
+    # The matching is incorrect
     if open_braces > 0:
         warning(f" Malformed function definition for '{ori_func_name}' in code file")
         return ""
-
+    # Return code content
     function_code = code_content[func_start:func_now]
     return func_init + function_code
 
