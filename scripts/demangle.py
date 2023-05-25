@@ -87,11 +87,11 @@ def get_source_from_docker(
 ) -> Optional[str]:
     # Create a container from the image
     client = docker.from_env()
-    image = client.images.get("gcr.io/oss-fuzz/" + proj_name + ":latest")
+    image = client.images.get(f"gcr.io/oss-fuzz/{proj_name}:latest")
     container = client.containers.run(image, detach=True)
     # check file_path, it may not the absolut path
     if not "/" in file_path:
-        file_path = "/src/" + proj_name + "/" + file_path
+        file_path = os.path.join("/src", proj_name, file_path)
     try:
         code_content = ""
         for chunk in container.get_archive(file_path)[0]:
@@ -123,8 +123,8 @@ def main():
 
     for json_file_name in json_file_names:
         file_name = json_file_name.split(".json")[0]
-        # open Json file and get filename + func_name
-        with open(json_path + "/" + json_file_name, "r") as f:
+        # open Json file and get filename+func_name
+        with open(os.path.join(json_path, json_file_name), "r") as f:
             try:
                 data = json.load(f)
             except json.JSONDecodeError:
@@ -180,7 +180,9 @@ def main():
                     "data": data[cnt][file_func_name],
                 }
         # open the file for writing
-        with open("./output/" + proj_name + "/" + json_file_name, "w") as json_file:
+        with open(
+            os.path.join("./output", proj_name, json_file_name), "w"
+        ) as json_file:
             # write to JSON file
             json.dump(data, json_file)
 
