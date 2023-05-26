@@ -118,6 +118,7 @@ def main():
     )
     args = parser.parse_args()
     proj_name = args.name
+    file_func_delim = "?"
     json_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "dump", proj_name)
     json_file_names = [f for f in os.listdir(json_path) if f.endswith(".json")]
     info(f"Looking for json file: {json_file_names}")
@@ -139,7 +140,7 @@ def main():
                 file_func_name = file_func_name_
 
             # if split not matched, need to add a check
-            splited_file_func_name = file_func_name.split("?")
+            splited_file_func_name = file_func_name.split(file_func_delim)
             file_path, mangle_func_name = (
                 splited_file_func_name[0],
                 splited_file_func_name[1],
@@ -150,7 +151,7 @@ def main():
             except ValueError:
                 demangle_func_name = mangle_func_name
 
-            if demangle_func_name == "":  # mangle_func_name == demangle_func_name
+            if demangle_func_name == None:  # mangle_func_name == demangle_func_name
                 warning(f" {mangle_func_name} demangle incorrect or unable to demangle")
                 data[cnt][
                     file_func_name
