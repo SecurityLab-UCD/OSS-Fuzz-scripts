@@ -4,8 +4,7 @@ import pandas as pd
 
 from scripts.common import *
 from scripts.projects import Project
-from scripts.fuzzer_stats import FuzzerStats
-from scripts.util import summarize_fuzzer_stats_df
+from scripts.fuzzer_stats import FuzzerStats, summarize_fuzzer_stats_df
 
 
 def get_project_fuzzer_stats(project: str) -> pd.DataFrame:

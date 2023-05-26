@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 class FuzzerStats:
     def __init__(
         self, project: str, lang: str, name: str, json_dump: dict, delim: str
@@ -30,3 +33,13 @@ class FuzzerStats:
 
     def __iter__(self):
         return iter(self.stats)
+
+
+def summarize_fuzzer_stats_df(df: pd.DataFrame):
+    print(
+        f"""
+        Number of unique functions executed in the dataset: {df.function.nunique()}
+        Number of unique inputs: {df.unique_inputs.sum()}
+        Number of total IO pairs: {df.total_executions.sum()}
+    """
+    )
