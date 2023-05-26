@@ -75,18 +75,7 @@ def get_source_from_docker(
     return code_content
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Catch source code")
-    parser.add_argument(
-        "-n",
-        "--name",
-        type=str,
-        required=False,
-        default="coturn",
-        help="The project name to fetch",
-    )
-    args = parser.parse_args()
-    proj_name = args.name
+def main(proj_name: str):
     file_func_delim = "?"
     json_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "dump", proj_name)
     json_file_names = [f for f in os.listdir(json_path) if f.endswith(".json")]
@@ -163,4 +152,14 @@ def main():
 
 # main function
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Catch source code")
+    parser.add_argument(
+        "-n",
+        "--name",
+        type=str,
+        required=False,
+        default="coturn",
+        help="The project name to fetch",
+    )
+    args = parser.parse_args()
+    main(args.name)
