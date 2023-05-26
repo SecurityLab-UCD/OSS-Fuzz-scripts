@@ -24,6 +24,7 @@ class Project:
         self.proj_dumpout = path.join(self.dumpdir, self.project)
         self.targets: List[str] = []
         self.project_oss_dir = path.join(OSSFUZZ, "projects", self.project)
+        self.file_func_delim = "?"
         with open(f"{self.project_oss_dir}/project.yaml", "r") as f:
             self.config = yaml.safe_load(f)
 
@@ -153,7 +154,7 @@ class Project:
                     file_func_name = file_func_name_
 
                 # if split not matched, need to add a check
-                splited_file_func_name = file_func_name.split("?")
+                splited_file_func_name = file_func_name.split(self.file_func_delim)
                 file_path, mangle_func_name = (
                     splited_file_func_name[0],
                     splited_file_func_name[1],
