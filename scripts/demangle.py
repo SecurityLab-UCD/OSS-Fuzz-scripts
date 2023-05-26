@@ -1,13 +1,11 @@
 import os
 import json
-import glob
 import re
 import docker
-import ctypes
 from logging import error, info, warning
 import cpp_demangle
 import argparse
-from typing import Optional, Union
+from typing import Optional
 from common import OSSFUZZ_SCRIPTS_HOME
 
 
@@ -53,35 +51,6 @@ def extract_func_code(
     return func_init + function_code
 
 
-def demangle_func(func: str) -> Optional[str]:
-    # Load the C++ Standard Library
-    libcxx = ctypes.cdll.LoadLibrary("libc++.so.1")
-    # Define the signature of the __cxa_demangle() function
-    demangle = libcxx.__cxa_demangle
-    demangle.argtypes = [
-        ctypes.c_char_p,
-        ctypes.c_char_p,
-        ctypes.POINTER(ctypes.c_size_t),
-        ctypes.POINTER(ctypes.c_int),
-    ]
-    # Call __cxa_demangle() to demangle the input string
-    output_buffer = ctypes.create_string_buffer(256)
-    output_size = ctypes.c_size_t(256)
-    status = ctypes.c_int(0)
-    result = demangle(
-        func.encode(), output_buffer, ctypes.byref(output_size), ctypes.byref(status)
-    )
-    # Forced return demangle value
-    return output_buffer.value.decode("utf-8")
-    # if result == 0:
-    #     # Demangling was successful
-    #     demangled_name = output_buffer.value.decode('utf-8')
-    #     return demangled_name
-    # else:
-    #     # Demangling failed
-    #     print("Demangling failed with status", status)
-
-
 # get source code from docker
 def get_source_from_docker(
     file_path: str, file_name: str, proj_name: str
@@ -98,7 +67,7 @@ def get_source_from_docker(
         for chunk in container.get_archive(file_path)[0]:
             code_content += chunk.decode("utf-8")
     except docker.errors.NotFound:
-        code_content = "ERROR"
+        code_content = None
         error(f" File  {file_path}  NOT found\n")
     # Stop and remove the container
     container.stop()
@@ -174,7 +143,7 @@ def main():
                     with open(f"{output_path}/{json_file_name}.txt", "w") as fi:
                         # write to JSON file
                         fi.write(code_content)
-                if code_content == "ERROR" or code_content == "":
+                if code_content == None:
                     error(f"{json_file_name} CODE content ERROR")
                     pre_file_path = f"try again {cnt}"
                     continue
