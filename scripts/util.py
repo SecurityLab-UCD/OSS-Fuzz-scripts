@@ -76,12 +76,3 @@ def concatMap(f: Callable[[_A], List[_B]], xs: List[_A]) -> List[_B]:
     # since this is not really human readable
     return [y for ys in xs for y in f(ys)]
 
-
-def summarize_fuzzer_stats_df(df: pd.DataFrame):
-    print(
-        f"""
-        Number of functions in the dataset: {len(df)}
-        Number of unique inputs: {df.unique_inputs.sum()}
-        Number of total IO pairs: {df.total_executions.sum()}
-    """
-    )

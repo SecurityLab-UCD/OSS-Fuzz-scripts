@@ -14,9 +14,8 @@ from scripts.util import (
     oss_fuzz_one_target,
     convert_to_seconds,
     concatMap,
-    summarize_fuzzer_stats_df,
 )
-from scripts.fuzzer_stats import FuzzerStats
+from scripts.fuzzer_stats import FuzzerStats, summarize_fuzzer_stats_df
 
 
 class Project:
@@ -134,7 +133,7 @@ class Project:
         outfiles = os.listdir(f"{OSSFUZZ}/build/out/{self.project}")
         if any([f.startswith("crash-") for f in outfiles]):
             os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
-            
+
         # redirect all dumps from oss-fuzz workdir
         if dump:
             dump_dir = path.join(self.dumpdir, self.project)
