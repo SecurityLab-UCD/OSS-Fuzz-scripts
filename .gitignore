@@ -33,3 +33,4 @@ slow-unit-*
 *seeds
 
 *.ipynb
+*.csv
