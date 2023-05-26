@@ -6,12 +6,17 @@ from logging import error, info, warning
 from functools import partial, reduce
 import argparse
 import warnings
+import json
+import pandas as pd
 import shutil
 import yaml
-from util import (
+from scripts.util import (
     oss_fuzz_one_target,
     convert_to_seconds,
+    concatMap,
+    summarize_fuzzer_stats_df,
 )
+from scripts.fuzzer_stats import FuzzerStats
 
 
 class Project:
@@ -22,6 +27,7 @@ class Project:
         self.proj_fuzzout = path.join(self.fuzzdir, self.project)
         self.proj_dumpout = path.join(self.dumpdir, self.project)
         self.targets: List[str] = []
+        self.file_func_delim = "?"
         self.project_oss_dir = path.join(OSSFUZZ, "projects", self.project)
         with open(f"{self.project_oss_dir}/project.yaml", "r") as f:
             self.config = yaml.safe_load(f)
@@ -139,8 +145,29 @@ class Project:
     def postprocess(self):
         pass
 
+    def get_project_stats(self) -> pd.DataFrame:
+        def analyze_fuzzer(fname: str) -> FuzzerStats:
+            dumpfile = path.join(self.proj_dumpout, fname)
+            fuzzer = fname.split(".json")[0]
+            with open(dumpfile, "r") as f:
+                data = json.load(f)
+            return FuzzerStats(
+                self.project,
+                self.config["language"],
+                fuzzer,
+                data,
+                self.file_func_delim,
+            )
+
+        summaries_for_all_fuzzers: List[FuzzerStats] = concatMap(
+            analyze_fuzzer, os.listdir(self.proj_dumpout)
+        )
+
+        return pd.DataFrame(summaries_for_all_fuzzers)
+
     def summarize(self):
-        pass
+        df = self.get_project_stats()
+        summarize_fuzzer_stats_df(df)
 
     def auto_build_w_pass(self, cpp: str):
         """build a project with pass automaticly
@@ -271,6 +298,8 @@ def main():
         )
     elif args.pipeline == "postprocess":
         dataset.postprocess()
+    elif args.pipeline == "summarize":
+        dataset.summarize()
     else:
         unreachable("Unkown pipeline provided")
 

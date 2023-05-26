@@ -5,3 +5,5 @@ export LLVM=$HOME/clang+llvm
 export PATH=$PATH:$LLVM/bin
 export CORES=`nproc`
 export OSSFUZZ=$OSSFUZZ_SCRIPTS_HOME/oss-fuzz
+
+export PYTHONPATH=$PYTHONPATH:$OSSFUZZ_SCRIPTS_HOME

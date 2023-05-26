@@ -5,7 +5,6 @@ from os import path
 from typing import Iterable, Callable, Set, Tuple, TypeVar, Optional, Dict
 import subprocess
 from tqdm import tqdm
-import socket
 
 
 OSSFUZZ = os.getenv("OSSFUZZ")

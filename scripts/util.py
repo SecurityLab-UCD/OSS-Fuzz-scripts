@@ -2,8 +2,9 @@ import subprocess
 import random
 import re
 from logging import error
-from common import *
-from typing import Tuple
+from scripts.common import *
+from typing import Tuple, Callable, List
+import pandas as pd
 
 
 def oss_fuzz_one_target(
@@ -63,3 +64,24 @@ def run_one_fuzzer(p, runtime):
 def convert_to_seconds(s: str) -> int:
     seconds_per_unit = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
     return int(s[:-1]) * seconds_per_unit[s[-1]]
+
+
+_A = TypeVar("_A")
+_B = TypeVar("_B")
+
+
+def concatMap(f: Callable[[_A], List[_B]], xs: List[_A]) -> List[_B]:
+    """Map a function over all the elements of a container and concatenate the resulting lists."""
+    # suger for below list comprehension:
+    # since this is not really human readable
+    return [y for ys in xs for y in f(ys)]
+
+
+def summarize_fuzzer_stats_df(df: pd.DataFrame):
+    print(
+        f"""
+        Number of functions in the dataset: {len(df)}
+        Number of unique inputs: {df.unique_inputs.sum()}
+        Number of total IO pairs: {df.total_executions.sum()}
+    """
+    )
