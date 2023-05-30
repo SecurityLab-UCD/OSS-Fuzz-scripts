@@ -45,7 +45,7 @@ def extract_func_code(
     # The matching is incorrect
     if open_braces > 0:
         warning(f" Malformed function definition for '{ori_func_name}' in code file")
-        return ""
+        return None
     # Return code content
     function_code = code_content[func_start:func_now]
     return func_init + function_code
