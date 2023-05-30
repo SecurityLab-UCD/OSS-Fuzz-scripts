@@ -15,7 +15,8 @@ def get_project_fuzzer_stats(project: str) -> pd.DataFrame:
 
 
 def main():
-    projects = ["coturn", "json-c"]  # todo: full list of built & fuzzed projects
+    projects = ["clib", "cjson", "coturn", "croaring", "gpac", "h3", "inchi", "libdwarf", "libpg_query", "libssh", "libyang",
+            "llhttp", "md4c", "miniz", "tmux", "p11-kit", "pycryptodome", "quickjs", "utf8proc", "w3m", "zydis"]  # todo: full list of built & fuzzed projects
 
     df = pd.concat([get_project_fuzzer_stats(project) for project in projects])
     print(f"In all {len(projects)} built and fuzzed projects:")
