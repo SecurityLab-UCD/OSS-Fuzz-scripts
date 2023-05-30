@@ -32,7 +32,7 @@ def extract_func_code(
         func_init, func_start = match_func_init.group(), match_func_init.end() - 3
     else:
         warning(f" No match function {ori_func_name} found")
-        return ""
+        return None
     # Match braces to get function code
     func_now, open_braces, flag = func_start, 0, 1
     while (open_braces > 0 or flag) and func_now < len(code_content):
@@ -136,7 +136,12 @@ def main(proj_name: str):
                     error(f"{json_file_name} CODE content ERROR")
                     pre_file_path = f"try again {cnt}"
                     continue
-                func_content = extract_func_code(func_name, code_content, True)
+                extrac_func_content = extract_func_code(func_name, code_content, True)
+                func_content = (
+                    "func extract error"
+                    if extrac_func_content is None
+                    else extrac_func_content
+                )
                 # write to json
                 data[cnt][file_func_name] = {
                     "code": func_content,
