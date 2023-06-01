@@ -13,6 +13,8 @@ if OSSFUZZ == None:
     error("OSSFUZZ not set, please tell me where oss-fuzz is.")
     exit(1)
 
+FILE_FUNC_DELIM = "?"
+
 LLVM = os.getenv("LLVM")
 if LLVM == None:
     error("LLVM not set, please tell me where clang+llvm is.")

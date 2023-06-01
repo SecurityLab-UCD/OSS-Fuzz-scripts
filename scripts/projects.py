@@ -26,7 +26,7 @@ class Project:
         self.proj_dumpout = path.join(self.dumpdir, self.project)
         self.targets: List[str] = []
         self.project_oss_dir = path.join(OSSFUZZ, "projects", self.project)
-        self.file_func_delim = "?"
+        self.file_func_delim = FILE_FUNC_DELIM
         with open(f"{self.project_oss_dir}/project.yaml", "r") as f:
             self.config = yaml.safe_load(f)
 

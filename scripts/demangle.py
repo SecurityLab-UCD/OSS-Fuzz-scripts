@@ -6,7 +6,7 @@ from logging import error, info, warning
 import cpp_demangle
 import argparse
 from typing import Optional
-from common import OSSFUZZ_SCRIPTS_HOME
+from common import *
 
 
 # Extract specific function
@@ -76,7 +76,6 @@ def get_source_from_docker(
 
 
 def main(proj_name: str):
-    file_func_delim = "?"
     json_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "dump", proj_name)
     json_file_names = [f for f in os.listdir(json_path) if f.endswith(".json")]
     info(f"Looking for json file: {json_file_names}")
@@ -98,7 +97,7 @@ def main(proj_name: str):
                 file_func_name = file_func_name_
 
             # if split not matched, need to add a check
-            splited_file_func_name = file_func_name.split(file_func_delim)
+            splited_file_func_name = file_func_name.split(FILE_FUNC_DELIM)
             file_path, mangle_func_name = (
                 splited_file_func_name[0],
                 splited_file_func_name[1],
