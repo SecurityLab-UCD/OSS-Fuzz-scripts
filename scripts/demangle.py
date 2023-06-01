@@ -21,7 +21,7 @@ def extract_func_code(
     # Thus manually add parphsis to match the function
     if if_c_code:
         # Searching string that start with anything followed with function name+()+{
-        # inside the () it should not have any ; > <
+        # In the re it should not have any ; > <
         match_func_init = re.search(
             f"(?:\n|.*){func_name}\s*\([^;><]*\)(?:\s*|\n)\\{{\n", code_content
         )
