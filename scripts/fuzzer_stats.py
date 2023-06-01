@@ -46,6 +46,9 @@ def is_deterministic(io_pairs: List[Tuple[str, List[str]]]) -> bool:
     Returns:
         bool: True if deterministic, False otherwise
     """
+    
+    # in report, each input corresponds to a hash_set of outputs
+    # so if the function is deterministic, each input should correspond to a hash_set of size 1
     return all(map(lambda x: len(x[1]) == 1, io_pairs))
 
 
