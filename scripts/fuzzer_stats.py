@@ -1,4 +1,5 @@
 import pandas as pd
+from typing import List, Tuple
 
 
 class FuzzerStats:
@@ -25,6 +26,7 @@ class FuzzerStats:
                 summarize_dict["language"] = lang
                 summarize_dict["fuzzer"] = self.name
                 summarize_dict["function"] = func
+                summarize_dict["deterministic"] = is_deterministic(io_pirs)
                 summarize_dict["unique_inputs"] = len(io_pirs)
                 summarize_dict["total_executions"] = sum(
                     map(lambda x: len(x[1]), io_pirs)
@@ -35,10 +37,23 @@ class FuzzerStats:
         return iter(self.stats)
 
 
+def is_deterministic(io_pairs: List[Tuple[str, List[str]]]) -> bool:
+    """check if function io pairs are deterministic
+
+    Args:
+        io_pairs (List[Tuple[str, List[str]]): list of io pairs, each input corresponds to a list of outputs
+
+    Returns:
+        bool: True if deterministic, False otherwise
+    """
+    return all(map(lambda x: len(x[1]) == 1, io_pairs))
+
+
 def summarize_fuzzer_stats_df(df: pd.DataFrame):
     print(
         f"""
-        Number of unique functions executed in the dataset: {df.function.nunique()}
+        Number of unique functions executed in the dataset: {df.function.nunique()},
+        Number of deterministic functions: {df.groupby('function')['deterministic'].all().sum()},
         Number of unique inputs: {df.unique_inputs.sum()}
         Number of total IO pairs: {df.total_executions.sum()}
     """
