@@ -129,9 +129,11 @@ def main(proj_name: str):
                     )
                     if not os.path.exists(output_path):
                         os.mkdir(output_path)
-                    with open(f"{output_path}/{json_file_name}.txt", "w") as fi:
-                        # write to JSON file
-                        fi.write(code_content)
+                    # If code_content is not None, then write to file
+                    if code_content:
+                        with open(f"{output_path}/{json_file_name}.txt", "w") as fi:
+                            # write to JSON file
+                            fi.write(code_content)
                 if code_content == None:
                     error(f"{json_file_name} CODE content ERROR")
                     pre_file_path = f"try again {cnt}"
