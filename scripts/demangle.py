@@ -60,8 +60,8 @@ def get_source_from_docker(
     client = docker.from_env()
     image = client.images.get(f"gcr.io/oss-fuzz/{proj_name}:latest")
     container = client.containers.run(image, detach=True)
-    # check file_path, it may not the absolut path
-    if "/" not in file_path:
+    # check file_path, it may not the absolute path
+    if "/" not in file_path or file_path[0] != "/":
         file_path = os.path.join("/src", proj_name, file_path)
     try:
         code_content = ""
