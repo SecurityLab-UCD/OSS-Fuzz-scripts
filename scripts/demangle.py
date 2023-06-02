@@ -50,7 +50,7 @@ def extract_func_code(
         return None
     # Return code content
     function_code = code_content[func_start:func_now]
-    return func_init[2:] + function_code
+    return func_init[1:] + function_code
 
 
 # get source code from docker
