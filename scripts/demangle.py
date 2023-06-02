@@ -20,10 +20,11 @@ def extract_func_code(
     # If C code, there is no demangle process, only have function name
     # Thus manually add parphsis to match the function
     if if_c_code:
-        # Searching string that start with anything followed with function name+()+{
+        # Searching string that start with anything but no whitespace
+        # followed with function name and () and {
         # In the re it should not have any ; > <
         match_func_init = re.search(
-            f"(?:\n|.*){func_name}\s*\([^;><]*\)(?:\s*|\n)\\{{\n", code_content
+            f"(?:\n|\n[^\s].*){func_name}\s*\([^;><]*\)(?:\s*|\n)\\{{\n", code_content
         )
     else:
         match_func_init = re.search(f".*{func_name}[^;]*\n", code_content)
@@ -49,7 +50,7 @@ def extract_func_code(
         return None
     # Return code content
     function_code = code_content[func_start:func_now]
-    return func_init + function_code
+    return func_init[2:] + function_code
 
 
 # get source code from docker
@@ -131,7 +132,10 @@ def main(proj_name: str):
                         os.mkdir(output_path)
                     # If code_content is not None, then write to file
                     if code_content:
-                        with open(f"{output_path}/{json_file_name}.txt", "w") as fi:
+                        with open(
+                            f"{output_path}/{json_file_name}_{pre_file_path.split('/')[-1]}.txt",
+                            "w",
+                        ) as fi:
                             # write to JSON file
                             fi.write(code_content)
                 if code_content == None:
