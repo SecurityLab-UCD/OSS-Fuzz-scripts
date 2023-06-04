@@ -2,3 +2,5 @@ ninja>=1.11.1
 pyyaml>=6.0.0
 tqdm>=4.62.3
 pandas>=1.5.3
+
+clang==14
