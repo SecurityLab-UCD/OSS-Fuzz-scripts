@@ -3,7 +3,7 @@ from scripts.source_code import clang_get_func_code
 import logging
 
 
-class TestStringMethods(unittest.TestCase):
+class TestSourceCodeC(unittest.TestCase):
     def test_c_regular(self):
         foo = clang_get_func_code("tests/weird_func_def.c", "some_func_not_defined")
         self.assertEqual(foo, None)
