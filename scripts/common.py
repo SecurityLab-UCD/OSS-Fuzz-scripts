@@ -17,6 +17,11 @@ if LLVM == None:
     error("LLVM not set, please tell me where clang+llvm is.")
     exit(1)
 
+LIBCLANG = os.path.join(LLVM, "lib", "libclang.so")
+if not path.exists(LIBCLANG):
+    error(f"libclang.so not found at {LIBCLANG}, please check LLVM.")
+    exit(1)
+
 CORES = os.getenv("CORES")
 if CORES == None:
     import multiprocessing
