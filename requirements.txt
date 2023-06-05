@@ -1,6 +1,12 @@
 ninja>=1.11.1
 pyyaml>=6.0.0
 tqdm>=4.62.3
+<<<<<<< HEAD
 pandas>=1.5.3
 
 clang==14
+=======
+docker>=6.1.2
+logging
+cpp_demangle>=0.1.2
+>>>>>>> c71c008 (update requirement.txt, update code_content return value)
