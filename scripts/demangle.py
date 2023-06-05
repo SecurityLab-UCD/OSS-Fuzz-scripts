@@ -48,8 +48,8 @@ def extract_func_code(
     if open_braces > 0:
         warning(f" Malformed function definition for '{ori_func_name}' in code file")
         return None
-    # Return code content
     function_code = code_content[func_start:func_now]
+    # Return code content, start with the third char because the re match \n at the begining
     return func_init[1:] + function_code
 
 
@@ -64,6 +64,7 @@ def get_source_from_docker(
     # check file_path, it may not the absolute path
     if "/" not in file_path or file_path[0] != "/":
         file_path = os.path.join("/src", proj_name, file_path)
+    # another possible path is os.path.join("/src", proj_name, "src", file_path)
     try:
         code_content = ""
         for chunk in container.get_archive(file_path)[0]:
@@ -83,7 +84,7 @@ def main(proj_name: str):
     info(f"Looking for json file: {json_file_names}")
 
     for json_file_name in json_file_names:
-        file_name = json_file_name.split(".json")[0]
+        file_name = os.path.splitext(json_file_name)[0]
         # open Json file and get filename+func_name
         with open(os.path.join(json_path, json_file_name), "r") as f:
             try:
@@ -119,6 +120,7 @@ def main(proj_name: str):
                 func_name = demangle_func_name.split("(")[0]
                 # Try to get code_content, the json file may provide the path or not
                 # only get code when pre_file_path!=file_path
+                # TODO: featch all code_content in one time
                 if pre_file_path != file_path:
                     code_content = get_source_from_docker(
                         file_path, file_name, proj_name
