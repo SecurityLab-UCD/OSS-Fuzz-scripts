@@ -20,15 +20,41 @@ def get_source_from_docker(
     container = client.containers.run(image, detach=True)
     # check file_path, it may not the absolute path
     if "/" not in file_path or file_path[0] != "/":
+        file_path4 = "/src"
+        file_path3 = os.path.join("/src", file_path)
+        file_path2 = os.path.join("/src", proj_name, "src", file_path)
         file_path = os.path.join("/src", proj_name, file_path)
-    # another possible path is os.path.join("/src", proj_name, "src", file_path)
+
+        build_sh = ""
+        for chunk in container.get_archive("/src/build.sh")[0]:
+            build_sh += chunk.decode("utf-8")
+        pattern = r"cd\s+(\S+)"
+        matches = re.findall(pattern, build_sh)
+        # Print the extracted strings
+        for match in matches:
+            file_path4 = os.path.join(file_path4, match)
     try:
         code_content = ""
         for chunk in container.get_archive(file_path)[0]:
             code_content += chunk.decode("utf-8")
     except docker.errors.NotFound:
-        code_content = None
-        error(f" File  {file_path}  NOT found\n")
+        try:
+            code_content = ""
+            for chunk in container.get_archive(file_path2)[0]:
+                code_content += chunk.decode("utf-8")
+        except docker.errors.NotFound:
+            try:
+                code_content = ""
+                for chunk in container.get_archive(file_path3)[0]:
+                    code_content += chunk.decode("utf-8")
+            except docker.errors.NotFound:
+                try:
+                    code_content = ""
+                    for chunk in container.get_archive(file_path4)[0]:
+                        code_content += chunk.decode("utf-8")
+                except docker.errors.NotFound:
+                    code_content = None
+                    error(f"File  {file_path}  NOT found\n")
     # Stop and remove the container
     container.stop()
     container.remove()
@@ -79,11 +105,6 @@ def main(proj_name: str):
                 # Try to get code_content, the json file may provide the path or not
                 # only get code when pre_file_path!=file_path
                 # TODO: featch all code_content in one time
-                if file_path not in code_list:
-                    code_list.append(file_path)
-                    code_content = get_source_from_docker(
-                        file_path, file_name, proj_name
-                    )
                 info(f"Open source file: {file_path}")
                 output_path = os.path.join(
                     OSSFUZZ_SCRIPTS_HOME, "output", proj_name, "codes"
@@ -91,14 +112,20 @@ def main(proj_name: str):
                 output_code_path = os.path.join(
                     output_path, os.path.basename(file_path)
                 )
-                if not os.path.exists(output_path):
-                    os.makedirs(output_path)
-                with open(output_code_path, "w") as fi:
-                    # write to JSON file
-                    fi.write(code_content)
-                if code_content == None:
-                    error(f"{json_file_name} CODE content ERROR")
-                    continue
+                # if current file have not been retrived, open docker to get it
+                if file_path not in code_list:
+                    code_content = get_source_from_docker(
+                        file_path, file_name, proj_name
+                    )
+                    if not os.path.exists(output_path):
+                        os.makedirs(output_path)
+                    if code_content == None:
+                        error(f"{file_path} CODE content ERROR")
+                        continue
+                    code_list.append(file_path)
+                    with open(output_code_path, "w") as fi:
+                        # write to JSON file
+                        fi.write(code_content)
                 # get function content
                 func_content = clang_get_func_code(output_code_path, func_name)
                 # write to json
