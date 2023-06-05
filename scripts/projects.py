@@ -4,17 +4,21 @@ import os
 from typing import List, Tuple
 from logging import error, info, warning
 from functools import partial, reduce
-from demangle import extract_func_code, demangle_func, get_source_from_docker
+from demangle import get_source_from_docker
 from demangle import main as main_post_process
 import argparse
 import warnings
+import json
+import pandas as pd
 import shutil
 import cpp_demangle
 import yaml
-from util import (
+from scripts.util import (
     oss_fuzz_one_target,
     convert_to_seconds,
+    concatMap,
 )
+from scripts.fuzzer_stats import FuzzerStats, summarize_fuzzer_stats_df
 
 
 class Project:
@@ -96,7 +100,9 @@ class Project:
         # we will just take any file thats not a directory
         # if any of collected files is not actually a fuzzer, the result corpus dir will be just empty
         self.targets = [
-            f for f in os.listdir(bindir) if not path.isdir(path.join(bindir, f))
+            f
+            for f in os.listdir(bindir)
+            if not path.isdir(path.join(bindir, f)) and f != "llvm-symbolizer"
         ]
 
     def fuzz(self, jobs=CORES, fuzztime=3600, dump=False):
@@ -114,9 +120,7 @@ class Project:
             if "." in t:
                 continue
             fuzzout = path.join(self.fuzzdir, self.project, t)
-            dumpout = (
-                path.join(self.dumpdir, self.project, f"{t}.json") if dump else None
-            )
+            dumpout = t + ".json" if dump else None
             bins_to_fuzz.append((t, fuzzout, dumpout))
 
         info(f"Fuzzing all {len(bins_to_fuzz)} binaries for {fuzztime} seconds")
@@ -133,12 +137,40 @@ class Project:
         if any([f.startswith("crash-") for f in outfiles]):
             os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
 
+        # redirect all dumps from oss-fuzz workdir
+        if dump:
+            dump_dir = path.join(self.dumpdir, self.project)
+            outfiles = os.listdir(f"{OSSFUZZ}/build/out/{self.project}")
+            if any([f.endswith(".json") for f in outfiles]):
+                os.system(f"mv {OSSFUZZ}/build/out/{self.project}/*.json {dump_dir}")
+
     def postprocess(self):
         proj_name = self.project
         main_post_process(proj_name)
 
+    def get_project_stats(self) -> pd.DataFrame:
+        def analyze_fuzzer(fname: str) -> FuzzerStats:
+            dumpfile = path.join(self.proj_dumpout, fname)
+            fuzzer = fname.split(".json")[0]
+            with open(dumpfile, "r") as f:
+                data = json.load(f)
+            return FuzzerStats(
+                self.project,
+                self.config["language"],
+                fuzzer,
+                data,
+                self.file_func_delim,
+            )
+
+        summaries_for_all_fuzzers: List[FuzzerStats] = concatMap(
+            analyze_fuzzer, os.listdir(self.proj_dumpout)
+        )
+
+        return pd.DataFrame(summaries_for_all_fuzzers)
+
     def summarize(self):
-        pass
+        df = self.get_project_stats()
+        summarize_fuzzer_stats_df(df)
 
     def auto_build_w_pass(self, cpp: str):
         """build a project with pass automaticly
@@ -269,6 +301,8 @@ def main():
         )
     elif args.pipeline == "postprocess":
         dataset.postprocess()
+    elif args.pipeline == "summarize":
+        dataset.summarize()
     else:
         unreachable("Unkown pipeline provided")
 
