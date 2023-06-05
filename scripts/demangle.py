@@ -20,6 +20,7 @@ def get_source_from_docker(
     container = client.containers.run(image, detach=True)
     # check file_path, it may not the absolute path
     if "/" not in file_path or file_path[0] != "/":
+        # Hard coding possible file path to retrive file
         file_path4 = "/src"
         file_path3 = os.path.join("/src", file_path)
         file_path2 = os.path.join("/src", proj_name, "src", file_path)
@@ -30,11 +31,13 @@ def get_source_from_docker(
             build_sh += chunk.decode("utf-8")
         pattern = r"cd\s+(\S+)"
         matches = re.findall(pattern, build_sh)
-        # Print the extracted strings
         for match in matches:
             file_path4 = os.path.join(file_path4, match)
+
+    # Try those possible path
     try:
         code_content = ""
+
         for chunk in container.get_archive(file_path)[0]:
             code_content += chunk.decode("utf-8")
     except docker.errors.NotFound:
@@ -82,7 +85,6 @@ def main(proj_name: str):
             file_func_name = ""
             for file_func_name_ in data[cnt]:
                 file_func_name = file_func_name_
-
             # if split not matched, need to add a check
             splited_file_func_name = file_func_name.split(FILE_FUNC_DELIM)
             file_path, mangle_func_name = (
@@ -94,16 +96,14 @@ def main(proj_name: str):
                 demangle_func_name = cpp_demangle.demangle(mangle_func_name)
             except ValueError:
                 demangle_func_name = mangle_func_name
-
-            if demangle_func_name == None:  # mangle_func_name == demangle_func_name
+            if demangle_func_name == None:
                 warning(f" {mangle_func_name} demangle incorrect or unable to demangle")
                 data[cnt][
                     file_func_name
                 ] = f" {mangle_func_name}demangle incorrect or unable to demangle"
             else:
                 func_name = demangle_func_name.split("(")[0]
-                # Try to get code_content, the json file may provide the path or not
-                # only get code when pre_file_path!=file_path
+                # Try to get code_content when the source code file haven't been retrived yet
                 # TODO: featch all code_content in one time
                 info(f"Open source file: {file_path}")
                 output_path = os.path.join(
@@ -124,7 +124,7 @@ def main(proj_name: str):
                         continue
                     code_list.append(file_path)
                     with open(output_code_path, "w") as fi:
-                        # write to JSON file
+                        # write to .c file
                         fi.write(code_content)
                 # get function content
                 func_content = clang_get_func_code(output_code_path, func_name)
@@ -133,7 +133,7 @@ def main(proj_name: str):
                     "code": func_content,
                     "data": data[cnt][file_func_name],
                 }
-        # open the file for writing
+        # write back to JSON
         with open(
             os.path.join(OSSFUZZ_SCRIPTS_HOME, "output", proj_name, json_file_name), "w"
         ) as json_file:
