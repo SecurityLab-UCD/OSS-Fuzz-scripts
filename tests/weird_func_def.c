@@ -1,6 +1,9 @@
 
 #include <stdlib.h>
 
+int separate_decl_def(int a, int b);
+int separate_decl_def(int a, int b) { return a + b; }
+
 // clang-format off
 int 
 two_lines_def(int a, int b) {

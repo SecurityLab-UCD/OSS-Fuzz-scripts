@@ -28,6 +28,16 @@ class TestSourceCodeC(unittest.TestCase):
         self.assertIsNotNone(json_parse_string)
         logging.info(json_parse_string)
 
+    def test_c_separate_decl_and_def(self):
+        func_decl = "int separate_decl_def(int a, int b);\n"
+        func_def = "int separate_decl_def(int a, int b) { return a + b; }\n"
+        separate_decl_def = clang_get_func_code(
+            "tests/weird_func_def.c", "separate_decl_def"
+        )
+
+        self.assertNotEqual(separate_decl_def, func_decl)
+        self.assertEqual(separate_decl_def, func_def)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

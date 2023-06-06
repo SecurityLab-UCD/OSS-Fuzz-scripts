@@ -26,6 +26,7 @@ def clang_get_func_code(file_path: str, function_name: str) -> Optional[str]:
         if (
             node.kind == clang.cindex.CursorKind.FUNCTION_DECL
             and node.spelling == function_name
+            and node.is_definition()
         ):
             # Get the source range of the function
             start_location = node.extent.start
