@@ -4,11 +4,14 @@ import os
 from typing import List, Tuple
 from logging import error, info, warning
 from functools import partial, reduce
+from demangle import get_source_from_docker
+from demangle import main as main_post_process
 import argparse
 import warnings
 import json
 import pandas as pd
 import shutil
+import cpp_demangle
 import yaml
 from scripts.util import (
     oss_fuzz_one_target,
@@ -26,8 +29,8 @@ class Project:
         self.proj_fuzzout = path.join(self.fuzzdir, self.project)
         self.proj_dumpout = path.join(self.dumpdir, self.project)
         self.targets: List[str] = []
-        self.file_func_delim = "?"
         self.project_oss_dir = path.join(OSSFUZZ, "projects", self.project)
+        self.file_func_delim = FILE_FUNC_DELIM
         with open(f"{self.project_oss_dir}/project.yaml", "r") as f:
             self.config = yaml.safe_load(f)
 
@@ -142,7 +145,8 @@ class Project:
                 os.system(f"mv {OSSFUZZ}/build/out/{self.project}/*.json {dump_dir}")
 
     def postprocess(self):
-        pass
+        proj_name = self.project
+        main_post_process(proj_name)
 
     def get_project_stats(self) -> pd.DataFrame:
         def analyze_fuzzer(fname: str) -> FuzzerStats:
