@@ -11,6 +11,7 @@ from typing import Optional
 from common import *
 from source_code import *
 
+
 # Get all files from docker
 def copy_files_from_docker(proj_name: str, output_path: str) -> bool:
     client = docker.from_env()
@@ -30,10 +31,11 @@ def copy_files_from_docker(proj_name: str, output_path: str) -> bool:
     # Extract files from the file-like object
     with tarfile.open(fileobj=fileobj) as tar:
         tar.extractall(output_path)
-    
+
     container.stop()
     container.remove()
     return True
+
 
 # get source code from docker
 def get_source_code_path(suffix_file_path: str, output_path: str) -> Optional[str]:
@@ -49,7 +51,6 @@ def get_source_code_path(suffix_file_path: str, output_path: str) -> Optional[st
         for file in files:
             file_path = os.path.join(root, file)
             if regex.match(file_path):
-                print(suffix_file_path,file_path)
                 return file_path
     return None
 
@@ -100,17 +101,15 @@ def main(proj_name: str):
                 func_name = demangle_func_name.split("(")[0]
                 # Get code path from local
                 code_path = get_source_code_path(file_path, output_path)
-                if code_path==None:
+                if code_path == None:
                     warning(f"Get source code path error {file_path}")
                     data[cnt][file_func_name] = {
                         "code": None,
                         "data": data[cnt][file_func_name],
                     }
                     continue
-                print(func_name,"\n")
                 # get function content
                 func_content = clang_get_func_code(code_path, func_name)
-                print(func_content)
                 # write to json
                 data[cnt][file_func_name] = {
                     "code": func_content,
