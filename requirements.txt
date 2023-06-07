@@ -5,5 +5,3 @@ pandas>=1.5.3
 docker>=6.1.2
 cpp_demangle>=0.1.2
 clang==14
-tarfile
-io
