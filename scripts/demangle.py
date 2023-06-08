@@ -14,6 +14,16 @@ from source_code import *
 
 # Get all files from docker
 def copy_files_from_docker(proj_name: str, output_path: str) -> bool:
+    """
+    Get all target project files from docker
+
+    Args:
+        proj_name (str): Target project name.
+        output_path (str): The local path to store the files.
+
+    Returns:
+        bool: True if the copying was successful, False otherwise.
+    """
     client = docker.from_env()
     image = client.images.get(f"gcr.io/oss-fuzz/{proj_name}:latest")
     container = client.containers.run(image, detach=True)
@@ -37,9 +47,18 @@ def copy_files_from_docker(proj_name: str, output_path: str) -> bool:
     return True
 
 
-# get source code from docker
+# get source code from local
 def get_source_code_path(suffix_file_path: str, output_path: str) -> Optional[str]:
-    paths = []
+    """
+    Match and get target file path from local
+
+    Args:
+        suffix_file_path (str): Suffix path of target file.
+        output_path (str): The path of project.
+
+    Returns:
+        str: target source code file path.
+    """
     # Transliteration special characterss, replace special characters with \ ahead of themselves
     pattern = r"[\[\].,{}()\W_]"
     suffix_file_path = re.sub(pattern, r"\\\g<0>", suffix_file_path)
