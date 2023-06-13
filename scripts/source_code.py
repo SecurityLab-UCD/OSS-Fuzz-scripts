@@ -27,14 +27,13 @@ def clang_get_func_code(
 
     # Traverse the AST to find the function
     for node in tu.cursor.walk_preorder():
-        node_name = get_node_name(node)
         if (
             node.kind
             in {
                 clang.cindex.CursorKind.FUNCTION_DECL,
                 clang.cindex.CursorKind.CXX_METHOD,
             }
-            and node_name == function_name
+            and get_node_name(node) == function_name
             and node.is_definition()
         ):
             # Get the source range of the function
