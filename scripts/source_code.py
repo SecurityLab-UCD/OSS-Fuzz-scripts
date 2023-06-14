@@ -1,11 +1,15 @@
 import clang.cindex
-from typing import Optional
+from typing import Optional, Callable
 from scripts.common import LLVM, LIBCLANG
 
 clang.cindex.Config.set_library_file(LIBCLANG)
 
 
-def clang_get_func_code(file_path: str, function_name: str) -> Optional[str]:
+def clang_get_func_code(
+    file_path: str,
+    function_name: str,
+    get_node_name: Callable[[clang.cindex.Cursor], str] = lambda node: node.spelling,
+) -> Optional[str]:
     """Extracts the source code of a function from a C/C++ file.
 
     Args:
@@ -24,8 +28,12 @@ def clang_get_func_code(file_path: str, function_name: str) -> Optional[str]:
     # Traverse the AST to find the function
     for node in tu.cursor.walk_preorder():
         if (
-            node.kind == clang.cindex.CursorKind.FUNCTION_DECL
-            and node.spelling == function_name
+            node.kind
+            in {
+                clang.cindex.CursorKind.FUNCTION_DECL,
+                clang.cindex.CursorKind.CXX_METHOD,
+            }
+            and get_node_name(node) == function_name
             and node.is_definition()
         ):
             # Get the source range of the function
@@ -44,9 +52,13 @@ def clang_get_func_code(file_path: str, function_name: str) -> Optional[str]:
     return None
 
 
+def clang_get_func_code_demangled(file_path: str, function_name: str):
+    return clang_get_func_code(file_path, function_name, lambda node: node.displayname)
+
+
 # todo: Java, Python
 
 CODE_EXTRACTOR = {
     "c": clang_get_func_code,
-    "cpp": clang_get_func_code,
+    "cpp": clang_get_func_code_demangled,
 }
