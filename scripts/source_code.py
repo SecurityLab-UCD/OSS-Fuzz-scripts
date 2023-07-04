@@ -30,8 +30,8 @@ def clang_get_func_code(
         if (
             node.kind
             in {
-                clang.cindex.CursorKind.FUNCTION_DECL,
-                clang.cindex.CursorKind.CXX_METHOD,
+                clang.cindex.CursorKind.FUNCTION_DECL,  # type: ignore
+                clang.cindex.CursorKind.CXX_METHOD,  # type: ignore
             }
             and get_node_name(node) == function_name
             and node.is_definition()
