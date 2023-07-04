@@ -4,7 +4,8 @@ import os
 from typing import List, Tuple
 from logging import error, info, warning
 from functools import partial, reduce
-from demangle import get_source_from_docker
+# ToDo: comform if this import is deprecated
+# from demangle import get_source_from_docker
 from demangle import main as main_post_process
 import argparse
 import warnings
