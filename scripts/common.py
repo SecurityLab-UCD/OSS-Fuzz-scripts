@@ -8,9 +8,11 @@ from tqdm import tqdm
 
 
 OSSFUZZ = os.getenv("OSSFUZZ")
-if OSSFUZZ == None:
+if OSSFUZZ is None:
     error("OSSFUZZ not set, please tell me where oss-fuzz is.")
     exit(1)
+else:
+    OSSFUZZ = os.path.abspath(OSSFUZZ)
 
 FILE_FUNC_DELIM = "?"
 
@@ -32,9 +34,11 @@ if CORES == None:
     warning(f"CORES not set, default to all cores. (nproc = {CORES})")
 
 OSSFUZZ_SCRIPTS_HOME = os.getenv("OSSFUZZ_SCRIPTS_HOME")
-if OSSFUZZ_SCRIPTS_HOME == None:
+if OSSFUZZ_SCRIPTS_HOME is None:
     error("OSSFUZZ_SCRIPTS_HOME not set, please tell me where the code is.")
     exit(1)
+else:
+    OSSFUZZ_SCRIPTS_HOME = os.path.abspath(OSSFUZZ_SCRIPTS_HOME)
 
 __T = TypeVar("__T")
 __R = TypeVar("__R")
@@ -85,34 +89,3 @@ def parallel_subprocess(
             ret[i] = on_exit(p)
     return ret
 
-
-class ExprimentInfo:
-    expr_path: str
-    fuzzed: bool
-
-    def __init__(self, expr_path):
-        self.expr_path = expr_path
-        self.fuzzed = True
-        try:
-            with open(self.get_fuzzer_stats_path(), "r") as f:
-                for line in f:
-                    line = line.split(" : ")
-                    self.__dict__[line[0].strip()] = line[1]
-            self.run_time = int(self.run_time)
-            self.bitmap_cvg = float(self.bitmap_cvg[:-2])
-            self.execs_per_sec = float(self.execs_per_sec)
-            self.execs_done = int(self.execs_done)
-        except:
-            self.fuzzed = False
-
-    def sufficiently_fuzzed(self):
-        return self.fuzzed and (self.bitmap_cvg > 50.0 or self.run_time > 30)
-
-    def to_expr_path(self):
-        return self.expr_path
-
-    def get_fuzzer_stats_path(self):
-        return os.path.join(self.to_expr_path(), "default", "fuzzer_stats")
-
-    def get_plot_data_path(self):
-        return os.path.join(self.to_expr_path(), "default", "plot_data")

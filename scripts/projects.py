@@ -116,7 +116,7 @@ class Project:
         self.mkdir_if_doesnt_exist()
 
         info("Collecting binaries to fuzz")
-        bins_to_fuzz: List[Tuple[str, str, str]] = []
+        bins_to_fuzz: List[Tuple[str, str, str | None]] = []
         for t in self.targets:
             if "." in t:
                 continue
@@ -137,6 +137,11 @@ class Project:
         outfiles = os.listdir(f"{OSSFUZZ}/build/out/{self.project}")
         if any([f.startswith("crash-") for f in outfiles]):
             os.system(f"mv {OSSFUZZ}/build/out/{self.project}/crash-* {crash_dir}")
+        # redirect all timeouts
+        timeout_dir = path.join(self.fuzzdir, self.project, "timeout")
+        if any([f.startswith("timeout-") for f in outfiles]):
+            os.system(f"mv {OSSFUZZ}/build/out/{self.project}/timeout-* {timeout_dir}")
+            
 
         # redirect all dumps from oss-fuzz workdir
         if dump:
@@ -163,11 +168,11 @@ class Project:
                 self.file_func_delim,
             )
 
-        summaries_for_all_fuzzers: List[FuzzerStats] = concatMap(
+        summaries_for_all_fuzzers: Iterable[FuzzerStats] = concatMap(
             analyze_fuzzer, os.listdir(self.proj_dumpout)
         )
 
-        return pd.DataFrame(summaries_for_all_fuzzers)
+        return pd.DataFrame(list(summaries_for_all_fuzzers))
 
     def summarize(self):
         df = self.get_project_stats()
