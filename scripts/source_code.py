@@ -1,4 +1,6 @@
 import clang.cindex
+import inspect
+import importlib.util
 from typing import Optional, Callable
 from scripts.common import LLVM, LIBCLANG
 
@@ -57,8 +59,16 @@ def clang_get_func_code_demangled(file_path: str, function_name: str):
 
 
 # todo: Java, Python
+def inspect_get_func_code_demangled(file_path: str, function_name: str):
+    spec = importlib.util.spec_from_file_location("module.name", file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    function = getattr(module, function_name)
+    return inspect.getsource(function)
+
 
 CODE_EXTRACTOR = {
     "c": clang_get_func_code,
     "cpp": clang_get_func_code_demangled,
+    "python": inspect_get_func_code_demangled,
 }

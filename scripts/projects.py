@@ -4,6 +4,7 @@ import os
 from typing import List, Tuple
 from logging import error, info, warning
 from functools import partial, reduce
+
 # ToDo: comform if this import is deprecated
 # from demangle import get_source_from_docker
 from demangle import main as main_post_process
@@ -23,7 +24,9 @@ from scripts.fuzzer_stats import FuzzerStats, summarize_fuzzer_stats_df
 
 
 class Project:
-    def __init__(self, project: str, fuzzdir: str, dumpdir: str):
+    def __init__(
+        self, project: str, fuzzdir: str, dumpdir: str, proj_language: str = "c"
+    ):
         self.project = project
         self.fuzzdir = path.join(OSSFUZZ_SCRIPTS_HOME, fuzzdir)
         self.dumpdir = path.join(OSSFUZZ_SCRIPTS_HOME, dumpdir)
@@ -32,6 +35,7 @@ class Project:
         self.targets: List[str] = []
         self.project_oss_dir = path.join(OSSFUZZ, "projects", self.project)
         self.file_func_delim = FILE_FUNC_DELIM
+        self.proj_language = proj_language
         with open(f"{self.project_oss_dir}/project.yaml", "r") as f:
             self.config = yaml.safe_load(f)
 
@@ -141,7 +145,6 @@ class Project:
         timeout_dir = path.join(self.fuzzdir, self.project, "timeout")
         if any([f.startswith("timeout-") for f in outfiles]):
             os.system(f"mv {OSSFUZZ}/build/out/{self.project}/timeout-* {timeout_dir}")
-            
 
         # redirect all dumps from oss-fuzz workdir
         if dump:
@@ -152,7 +155,8 @@ class Project:
 
     def postprocess(self):
         proj_name = self.project
-        main_post_process(proj_name)
+        proj_language = self.proj_language
+        main_post_process(proj_name, proj_language)
 
     def get_project_stats(self) -> pd.DataFrame:
         def analyze_fuzzer(fname: str) -> FuzzerStats:

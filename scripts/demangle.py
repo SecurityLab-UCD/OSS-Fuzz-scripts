@@ -47,7 +47,6 @@ def copy_files_from_docker(proj_name: str, output_path: str) -> bool:
     return True
 
 
-# get source code from local
 def get_source_code_path(suffix_file_path: str, output_path: str) -> Optional[str]:
     """
     Match and get target file path from local
@@ -74,7 +73,7 @@ def get_source_code_path(suffix_file_path: str, output_path: str) -> Optional[st
     return None
 
 
-def main(proj_name: str):
+def main(proj_name: str, proj_language: str):
     json_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "dump", proj_name)
     output_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "output", proj_name, "codes")
     # Get all files from docker
@@ -82,7 +81,6 @@ def main(proj_name: str):
         error(f"Fetch {proj_name} source code failed")
         return
     json_file_names = [f for f in os.listdir(json_path) if f.endswith(".json")]
-    code_list = []
     info(f"Looking for json file: {json_file_names}")
 
     for json_file_name in json_file_names:
@@ -95,7 +93,6 @@ def main(proj_name: str):
                 warning(f" {json_file_name}  Json file illegal")
                 continue
         info(f"NUMBER OF FUNCTION: {len(data)}")
-        code_content = ""
         for cnt in range(len(data)):
             file_func_name = ""
             for file_func_name_ in data[cnt]:
@@ -127,8 +124,11 @@ def main(proj_name: str):
                         "data": data[cnt][file_func_name],
                     }
                     continue
-                # get function content
-                func_content = clang_get_func_code(code_path, func_name)
+                # get function content check project languages
+                if proj_language == "c":
+                    func_content = clang_get_func_code(code_path, func_name)
+                elif proj_language == "python":
+                    func_content = inspect_get_func_code_demangled(code_path, func_name)
                 # write to json
                 data[cnt][file_func_name] = {
                     "code": func_content,
@@ -152,6 +152,14 @@ if __name__ == "__main__":
         required=False,
         default="coturn",
         help="The project name to fetch",
+    )
+    parser.add_argument(
+        "-l",
+        "--language",
+        type=str,
+        required=False,
+        default="c",
+        help="The project language",
     )
     args = parser.parse_args()
     main(args.name)
