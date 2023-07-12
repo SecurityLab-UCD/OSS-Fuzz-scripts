@@ -125,7 +125,7 @@ def main(proj_name: str, proj_language: str):
                     }
                     continue
                 # get function content check project languages
-                if proj_language == "c":
+                if proj_language == "c" or proj_language == "cpp":
                     func_content = clang_get_func_code(code_path, func_name)
                 elif proj_language == "python":
                     func_content = inspect_get_func_code_demangled(code_path, func_name)
