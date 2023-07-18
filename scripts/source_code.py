@@ -61,23 +61,23 @@ def clang_get_func_code_demangled(file_path: str, function_name: str):
     return clang_get_func_code(file_path, function_name, lambda node: node.displayname)
 
 
-class FunctionVisitor(ast.NodeVisitor):
-    def __init__(self, function_name):
+class FunctionFinder(ast.NodeVisitor):
+    def __init__(self, class_name, function_name):
+        self.class_name = class_name
         self.function_name = function_name
         self.functions = {}
 
-    def visit_FunctionDef(self, node):
-        # If this is the function we're looking for, or it's a function we've previously found
-        # and saved because it was called in the function we're looking for, save its source code.
-        if node.name == self.function_name or node.name in self.functions:
-            self.functions[node.name] = astunparse.unparse(node)
-
-        # If this function calls another function that we haven't found yet, save that function's name.
-        # The next time we encounter a FunctionDef node with that name, we'll save its source code.
-        for call in ast.walk(node):
-            if isinstance(call, ast.Call) and isinstance(call.func, ast.Name):
-                if call.func.id not in self.functions:
-                    self.functions[call.func.id] = None
+    def visit_ClassDef(self, node):
+        print(node.name)
+        if node.name == self.class_name:
+            for body_node in node.body:
+                if (
+                    isinstance(body_node, ast.FunctionDef)
+                    and body_node.name == self.function_name
+                ):
+                    self.functions[node.name] = astunparse.unparse(body_node)
+                    break
+        self.generic_visit(node)
 
 
 # todo: Java, Python
@@ -88,7 +88,7 @@ def inspect_get_func_code_demangled(file_path: str, function_name: str):
 
     tree = ast.parse(source_code)
 
-    visitor = FunctionVisitor(function_name)
+    visitor = FunctionFinder("Student", function_name)
     visitor.visit(tree)
 
     function_source_code = ""

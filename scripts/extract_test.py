@@ -1,50 +1,62 @@
 from source_code import *
 
 a = inspect_get_func_code_demangled(
-    "/home/hxxzhang/python-io-capture/example_project/example.py", "sum_v6"
+    "/home/hxxzhang/python-io-capture/example_project/person.py", "introduce"
 )
+print(a)
+
 # import ast
 # import astunparse
 
 
-# class FunctionVisitor(ast.NodeVisitor):
-#     def __init__(self, function_name):
-#         self.function_name = function_name
-#         self.functions = {}
+# class MethodFinder(ast.NodeVisitor):
+#     def __init__(self, class_name, method_name):
+#         self.class_name = class_name
+#         self.method_name = method_name
 
-#     def visit_FunctionDef(self, node):
-#         # If this is the function we're looking for, or it's a function we've previously found
-#         # and saved because it was called in the function we're looking for, save its source code.
-#         if node.name == self.function_name or node.name in self.functions:
-#             self.functions[node.name] = astunparse.unparse(node)
-
-#         # If this function calls another function that we haven't found yet, save that function's name.
-#         # The next time we encounter a FunctionDef node with that name, we'll save its source code.
-#         for call in ast.walk(node):
-#             if isinstance(call, ast.Call) and isinstance(call.func, ast.Name):
-#                 if call.func.id not in self.functions:
-#                     self.functions[call.func.id] = None
+#     def visit_ClassDef(self, node):
+#         print(node.name)
+#         if node.name == self.class_name:
+#             for body_node in node.body:
+#                 if (
+#                     isinstance(body_node, ast.FunctionDef)
+#                     and body_node.name == self.method_name
+#                 ):
+#                     print(astunparse.unparse(body_node))
+#                     break
+#         self.generic_visit(node)
 
 
 # source_code = """
-# def foo():
-#     bar()
-#     baz()
-#     print('foo')
+# import util
 
-# def bar():
-#     baz()
-#     print('bar')
 
-# def baz():
-#     print('baz')
+# class Person:
+
+#     def __init__(self, name, age):
+#         self.name = name
+#         self.age = age
+
+#     def introduce(self):
+
+#         return f"Hi, my name is {self.name} and I am {self.age} years old."
+
+#     def __repr__(self):
+#         return util.format_repr(
+#             self.__class__.__qualname__, name=self.name, age=self.age
+#         )
+
+
+# class Student(Person):
+#     def __init__(self, name, age, sid):
+#         Person.__init__(self, name, age)
+#         self.id = sid
+
+#     def introduce(self):
+#         return f"{super().introduce()} , and I am a student in UC Davis."
+
 # """
 
 # tree = ast.parse(source_code)
-# visitor = FunctionVisitor("foo")
-# visitor.visit(tree)
-
-# for function_name, function_code in visitor.functions.items():
-#     if function_code is not None:
-#         print(f"--- {function_name} ---")
-#         print(function_code)
+# finder = MethodFinder("Student", "introduce")
+# finder.visit(tree)
