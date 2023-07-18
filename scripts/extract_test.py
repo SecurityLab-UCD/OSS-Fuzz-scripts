@@ -1,7 +1,7 @@
 from source_code import *
 
 a = inspect_get_func_code_demangled(
-    "/home/hxxzhang/python-io-capture/example_project/person.py", "introduce"
+    "/home/hxxzhang/python-io-capture/example_project/person.py", "introduce", "Person"
 )
 print(a)
 

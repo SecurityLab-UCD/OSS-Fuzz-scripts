@@ -62,33 +62,47 @@ def clang_get_func_code_demangled(file_path: str, function_name: str):
 
 
 class FunctionFinder(ast.NodeVisitor):
-    def __init__(self, class_name, function_name):
+    def __init__(self, class_name: str = None, function_name: str = None):
         self.class_name = class_name
         self.function_name = function_name
         self.functions = {}
 
     def visit_ClassDef(self, node):
-        print(node.name)
-        if node.name == self.class_name:
-            for body_node in node.body:
-                if (
-                    isinstance(body_node, ast.FunctionDef)
-                    and body_node.name == self.function_name
-                ):
-                    self.functions[node.name] = astunparse.unparse(body_node)
-                    break
-        self.generic_visit(node)
+        # check the function is defined inside of class or not
+        if self.class_name != None:
+            if node.name == self.class_name:
+                for body_node in node.body:
+                    if (
+                        isinstance(body_node, ast.FunctionDef)
+                        and body_node.name == self.function_name
+                    ):
+                        self.functions[node.name] = astunparse.unparse(body_node)
+                        break
+            self.generic_visit(node)
+        else:
+            # If this is the function we're looking for, or it's a function we've previously found
+            # and saved because it was called in the function we're looking for, save its source code.
+            if node.name == self.function_name or node.name in self.functions:
+                self.functions[node.name] = astunparse.unparse(node)
+            # If this function calls another function that we haven't found yet, save that function's name.
+            # The next time we encounter a FunctionDef node with that name, we'll save its source code.
+            for call in ast.walk(node):
+                if isinstance(call, ast.Call) and isinstance(call.func, ast.Name):
+                    if call.func.id not in self.functions:
+                        self.functions[call.func.id] = None
 
 
 # todo: Java, Python
-def inspect_get_func_code_demangled(file_path: str, function_name: str):
+def inspect_get_func_code_demangled(
+    file_path: str, function_name: str, class_name: str = None
+):
     source_code = ""
     with open(file_path, "r") as source:
         source_code = source_code.join(source.read())
 
     tree = ast.parse(source_code)
 
-    visitor = FunctionFinder("Student", function_name)
+    visitor = FunctionFinder(class_name, function_name)
     visitor.visit(tree)
 
     function_source_code = ""
