@@ -53,7 +53,7 @@ Here is a list of projects we build successfully (Projects with a link were manu
 49. utf8proc(auto_build_w_pass c++),c
 50. w3m(auto_build_w_pass c++),c
 51. zydis(auto_build_w_pass c++),c
-52. arduinojson
+52. arduinojson(auto_build_w_pass c++),c++
 53. assimp(auto_build_w_pass c++),c++
 54. boost(auto_build_w_pass c++),c++
 55. 
