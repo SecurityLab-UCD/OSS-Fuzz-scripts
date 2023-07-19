@@ -125,16 +125,6 @@ def inspect_get_func_code_demangled(
 
 # todo: Java
 
-
-# Only get single function source code, can not deal with function call
-def inspect_get_func_code_demangled_2(file_path: str, function_name: str):
-    spec = importlib.util.spec_from_file_location("module.name", file_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    function = getattr(module, function_name)
-    return inspect.getsource(function)
-
-
 CODE_EXTRACTOR = {
     "c": clang_get_func_code,
     "cpp": clang_get_func_code_demangled,
