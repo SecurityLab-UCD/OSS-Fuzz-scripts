@@ -62,8 +62,11 @@ def clang_get_func_code_demangled(file_path: str, function_name: str):
     return clang_get_func_code(file_path, function_name, lambda node: node.displayname)
 
 
-# Visit AST to get in-class function
 class InclassFunctionFinder(ast.NodeVisitor):
+    """
+    Visit AST to get in-class function from a Python file
+    """
+
     def __init__(self, class_name: str = None, function_name: str = None):
         self.class_name = class_name
         self.function_name = function_name
@@ -83,8 +86,11 @@ class InclassFunctionFinder(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-# Visit AST to get function
 class FunctionFinder(ast.NodeVisitor):
+    """
+    Visit AST to get function from a Python file
+    """
+
     def __init__(self, function_name: str):
         self.function_name = function_name
         self.functions = {}
@@ -95,10 +101,19 @@ class FunctionFinder(ast.NodeVisitor):
             self.functions[node.name] = astunparse.unparse(node)
 
 
-# Extract Python project function code
 def inspect_get_func_code_demangled(
     file_path: str, function_name: str, class_name: str = None
-):
+) -> Optional[str]:
+    """Extracts the source code of a function from a Python file.
+
+    Args:
+        file_path (str): path to the source code file
+        function_name (str): name of the function
+        class_name (str): name of the class
+
+    Returns:
+        Optional[str]: source code of the function, None if not found
+    """
     # get all source code
     source_code = ""
     with open(file_path, "r") as source:
