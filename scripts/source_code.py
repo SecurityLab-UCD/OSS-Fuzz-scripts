@@ -1,9 +1,10 @@
+from _ast import AST
 import clang.cindex
 import inspect
 import importlib.util
 import ast
 import astunparse
-from typing import Optional, Callable
+from typing import Any, Optional, Callable
 
 # from scripts.common import LLVM, LIBCLANG
 
@@ -61,56 +62,68 @@ def clang_get_func_code_demangled(file_path: str, function_name: str):
     return clang_get_func_code(file_path, function_name, lambda node: node.displayname)
 
 
-class FunctionFinder(ast.NodeVisitor):
+# Visit AST to get in-class function
+class InclassFunctionFinder(ast.NodeVisitor):
     def __init__(self, class_name: str = None, function_name: str = None):
         self.class_name = class_name
         self.function_name = function_name
         self.functions = {}
 
-    def visit_ClassDef(self, node):
-        # check the function is defined inside of class or not
-        if self.class_name != None:
-            if node.name == self.class_name:
-                for body_node in node.body:
-                    if (
-                        isinstance(body_node, ast.FunctionDef)
-                        and body_node.name == self.function_name
-                    ):
-                        self.functions[node.name] = astunparse.unparse(body_node)
-                        break
-            self.generic_visit(node)
-        else:
-            # If this is the function we're looking for, or it's a function we've previously found
-            # and saved because it was called in the function we're looking for, save its source code.
-            if node.name == self.function_name or node.name in self.functions:
-                self.functions[node.name] = astunparse.unparse(node)
-            # If this function calls another function that we haven't found yet, save that function's name.
-            # The next time we encounter a FunctionDef node with that name, we'll save its source code.
-            for call in ast.walk(node):
-                if isinstance(call, ast.Call) and isinstance(call.func, ast.Name):
-                    if call.func.id not in self.functions:
-                        self.functions[call.func.id] = None
+    def visit_ClassDef(self, node: AST):
+        # Check class name
+        if node.name == self.class_name:
+            for body_node in node.body:
+                if (
+                    isinstance(body_node, ast.FunctionDef)
+                    and body_node.name == self.function_name
+                ):
+                    self.functions[node.name] = astunparse.unparse(body_node)
+                    break
+        # Ensure traversal continues to the children of nodes that don't match the current mode.
+        self.generic_visit(node)
 
 
-# todo: Java, Python
+# Visit AST to get function
+class FunctionFinder(ast.NodeVisitor):
+    def __init__(self, function_name: str):
+        self.function_name = function_name
+        self.functions = {}
+
+    def visit_FunctionDef(self, node: AST):
+        # If this is the function we're looking for then save it
+        if node.name == self.function_name or node.name in self.functions:
+            self.functions[node.name] = astunparse.unparse(node)
+
+
+# Extract Python project function code
 def inspect_get_func_code_demangled(
     file_path: str, function_name: str, class_name: str = None
 ):
+    # get all source code
     source_code = ""
     with open(file_path, "r") as source:
         source_code = source_code.join(source.read())
 
+    # traverse AST tree to find target function code
     tree = ast.parse(source_code)
 
-    visitor = FunctionFinder(class_name, function_name)
-    visitor.visit(tree)
-
+    # Check the function is defined in class or not
+    if class_name == None:
+        visitor = FunctionFinder(function_name)
+        visitor.visit(tree)
+    else:
+        visitor = InclassFunctionFinder(class_name, function_name)
+        visitor.visit(tree)
+    # get the result
     function_source_code = ""
     for function_name, function_code in visitor.functions.items():
         if function_code is not None:
             function_source_code = function_source_code.join(function_code)
 
     return function_source_code
+
+
+# todo: Java
 
 
 # Only get single function source code, can not deal with function call

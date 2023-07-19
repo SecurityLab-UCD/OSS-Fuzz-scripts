@@ -73,7 +73,7 @@ def get_source_code_path(suffix_file_path: str, output_path: str) -> Optional[st
     return None
 
 
-def main(proj_name: str, proj_language: str):
+def main(proj_name: str, proj_language: str = "c"):
     json_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "dump", proj_name)
     output_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "output", proj_name, "codes")
     # Get all files from docker
@@ -103,6 +103,7 @@ def main(proj_name: str, proj_language: str):
                 splited_file_func_name[0],
                 splited_file_func_name[1],
             )
+
             # if this is c file then the mangle does not exist
             try:
                 demangle_func_name = cpp_demangle.demangle(mangle_func_name)
@@ -128,7 +129,10 @@ def main(proj_name: str, proj_language: str):
                 if proj_language == "c" or proj_language == "cpp":
                     func_content = clang_get_func_code(code_path, func_name)
                 elif proj_language == "python":
-                    func_content = inspect_get_func_code_demangled(code_path, func_name)
+                    # class_name need to defined in json file
+                    func_content = inspect_get_func_code_demangled(
+                        code_path, func_name, class_name=None
+                    )
                 # write to json
                 data[cnt][file_func_name] = {
                     "code": func_content,
@@ -162,4 +166,4 @@ if __name__ == "__main__":
         help="The project language",
     )
     args = parser.parse_args()
-    main(args.name)
+    main(args.name, args.language)
