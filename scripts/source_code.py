@@ -1,4 +1,3 @@
-from _ast import AST
 import clang.cindex
 import inspect
 import importlib.util
@@ -6,9 +5,9 @@ import ast
 import astunparse
 from typing import Any, Optional, Callable
 
-# from scripts.common import LLVM, LIBCLANG
+from scripts.common import LLVM, LIBCLANG
 
-# clang.cindex.Config.set_library_file(LIBCLANG)
+clang.cindex.Config.set_library_file(LIBCLANG)
 
 
 def clang_get_func_code(
@@ -72,7 +71,7 @@ class InclassFunctionFinder(ast.NodeVisitor):
         self.function_name = function_name
         self.functions = {}
 
-    def visit_ClassDef(self, node: AST):
+    def visit_ClassDef(self, node: ast.AST):
         # Check class name
         if node.name == self.class_name:
             for body_node in node.body:
@@ -95,13 +94,13 @@ class FunctionFinder(ast.NodeVisitor):
         self.function_name = function_name
         self.functions = {}
 
-    def visit_FunctionDef(self, node: AST):
+    def visit_FunctionDef(self, node: ast.AST):
         # If this is the function we're looking for then save it
         if node.name == self.function_name or node.name in self.functions:
             self.functions[node.name] = astunparse.unparse(node)
 
 
-def inspect_get_func_code_demangled(
+def py_get_func_code_demangled(
     file_path: str, function_name: str, class_name: str = None
 ) -> Optional[str]:
     """Extracts the source code of a function from a Python file.
@@ -130,12 +129,14 @@ def inspect_get_func_code_demangled(
         visitor = InclassFunctionFinder(class_name, function_name)
         visitor.visit(tree)
     # get the result
-    function_source_code = ""
-    for function_name, function_code in visitor.functions.items():
-        if function_code is not None:
-            function_source_code = function_source_code.join(function_code)
 
-    return function_source_code
+    function_source_code = "".join(
+        function_code
+        for function_code in visitor.functions.values()
+        if function_code is not None
+    )
+
+    return function_source_code if function_source_code else None
 
 
 # todo: Java
@@ -143,5 +144,5 @@ def inspect_get_func_code_demangled(
 CODE_EXTRACTOR = {
     "c": clang_get_func_code,
     "cpp": clang_get_func_code_demangled,
-    "python": inspect_get_func_code_demangled,
+    "python": py_get_func_code_demangled,
 }

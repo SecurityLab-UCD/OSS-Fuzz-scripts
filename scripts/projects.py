@@ -24,9 +24,7 @@ from scripts.fuzzer_stats import FuzzerStats, summarize_fuzzer_stats_df
 
 
 class Project:
-    def __init__(
-        self, project: str, fuzzdir: str, dumpdir: str, proj_language: str = "c"
-    ):
+    def __init__(self, project: str, fuzzdir: str, dumpdir: str):
         self.project = project
         self.fuzzdir = path.join(OSSFUZZ_SCRIPTS_HOME, fuzzdir)
         self.dumpdir = path.join(OSSFUZZ_SCRIPTS_HOME, dumpdir)
@@ -35,7 +33,6 @@ class Project:
         self.targets: List[str] = []
         self.project_oss_dir = path.join(OSSFUZZ, "projects", self.project)
         self.file_func_delim = FILE_FUNC_DELIM
-        self.proj_language = proj_language
         with open(f"{self.project_oss_dir}/project.yaml", "r") as f:
             self.config = yaml.safe_load(f)
 
@@ -155,8 +152,7 @@ class Project:
 
     def postprocess(self):
         proj_name = self.project
-        proj_language = self.proj_language
-        main_post_process(proj_name, proj_language)
+        main_post_process(proj_name, self.config["language"])
 
     def get_project_stats(self) -> pd.DataFrame:
         def analyze_fuzzer(fname: str) -> FuzzerStats:

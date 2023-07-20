@@ -130,7 +130,7 @@ def main(proj_name: str, proj_language: str = "c"):
                     func_content = clang_get_func_code(code_path, func_name)
                 elif proj_language == "python":
                     # class_name need to defined in json file
-                    func_content = inspect_get_func_code_demangled(
+                    func_content = py_get_func_code_demangled(
                         code_path, func_name, class_name=None
                     )
                 # write to json
@@ -144,26 +144,3 @@ def main(proj_name: str, proj_language: str = "c"):
         ) as json_file:
             # write to JSON file
             json.dump(data, json_file)
-
-
-# main function
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Catch source code")
-    parser.add_argument(
-        "-n",
-        "--name",
-        type=str,
-        required=False,
-        default="coturn",
-        help="The project name to fetch",
-    )
-    parser.add_argument(
-        "-l",
-        "--language",
-        type=str,
-        required=False,
-        default="c",
-        help="The project language",
-    )
-    args = parser.parse_args()
-    main(args.name, args.language)
