@@ -7,9 +7,11 @@ from scripts.get_fuzz_dump import get_fuzz_dump
 from scripts.projects import Project
 
 
-# Option can be a for building and fuzzing all projects or c for continuing from the last built project
-# If continuing, will skip projects that already have a dump directory with json files inside
 def build_and_fuzz(option: str) -> None:
+    """Builds and fuzzes C++ projects
+    Option can be a for building and fuzzing all projects or c for continuing from the last built project
+    If continuing, will skip projects that already have a dump directory with json files inside
+    """
     # Get all C++ projects
     with open("./built_w_pass.md", "r") as f:
         lines = f.readlines()
