@@ -9,7 +9,7 @@ Here is a list of projects we build successfully (Projects with a link were manu
 5. [lua](./oss-fuzz/projects/lua/build_w_pass.sh),c
 6. alembic(auto_build_w_pass c++),c++
 7. [libpng](./oss-fuzz/projects/libpng/build_w_pass.sh),c++
-8. openssh(auto_build_w_pass c++),c++
+8. boost(auto_build_w_pass c++),c++
 9. mongoose(auto_build_w_pass c++),c++
 10. libssh(auto_build_w_pass c++),c
 11. json(auto_build_w_pass c++),c++
@@ -25,7 +25,7 @@ Here is a list of projects we build successfully (Projects with a link were manu
 21. exprtk(auto_build_w_pass c++),c++
 22. fmt(auto_build_w_pass c++),c++
 23. freeimage(auto_build_w_pass c++),c++
-24. fuzzing-puzzle(auto_build_w_pass c++),c++
+24. fuzzing-puzzles(auto_build_w_pass c++),c++
 25. gfwx(auto_build_w_pass c++),c++
 26. gpac(auto_build_w_pass c++),c
 27. clib(auto_build_w_pass c++),c
@@ -53,3 +53,7 @@ Here is a list of projects we build successfully (Projects with a link were manu
 49. utf8proc(auto_build_w_pass c++),c
 50. w3m(auto_build_w_pass c++),c
 51. zydis(auto_build_w_pass c++),c
+52. arduinojson(auto_build_w_pass c++),c++
+53. assimp(auto_build_w_pass c++),c++
+54. 
+55. 
