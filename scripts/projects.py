@@ -4,6 +4,7 @@ import os
 from typing import List, Tuple
 from logging import error, info, warning
 from functools import partial, reduce
+
 # ToDo: comform if this import is deprecated
 # from demangle import get_source_from_docker
 from demangle import main as main_post_process
@@ -141,7 +142,6 @@ class Project:
         timeout_dir = path.join(self.fuzzdir, self.project, "timeout")
         if any([f.startswith("timeout-") for f in outfiles]):
             os.system(f"mv {OSSFUZZ}/build/out/{self.project}/timeout-* {timeout_dir}")
-            
 
         # redirect all dumps from oss-fuzz workdir
         if dump:
@@ -152,7 +152,7 @@ class Project:
 
     def postprocess(self):
         proj_name = self.project
-        main_post_process(proj_name)
+        main_post_process(proj_name, self.config["language"])
 
     def get_project_stats(self) -> pd.DataFrame:
         def analyze_fuzzer(fname: str) -> FuzzerStats:
