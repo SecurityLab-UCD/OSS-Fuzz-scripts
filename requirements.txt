@@ -4,4 +4,5 @@ tqdm>=4.62.3
 pandas>=1.5.3
 docker>=6.1.2
 cpp_demangle>=0.1.2
+astunparse>=1.6.3
 clang==14
