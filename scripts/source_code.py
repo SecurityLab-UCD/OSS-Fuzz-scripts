@@ -13,8 +13,8 @@ clang.cindex.Config.set_library_file(LIBCLANG)
 def clang_get_func_code(
     file_path: str,
     function_name: str,
-    get_node_name: Callable[
-        [clang.cindex.Cursor], str
+    correct_node: Callable[
+        [clang.cindex.Cursor, str], bool 
     ] = lambda node, name: node.spelling
     == name,
 ) -> Optional[str]:
@@ -41,7 +41,7 @@ def clang_get_func_code(
                 clang.cindex.CursorKind.FUNCTION_DECL,  # type: ignore
                 clang.cindex.CursorKind.CXX_METHOD,  # type: ignore
             }
-            and get_node_name(node, function_name)
+            and correct_node(node, function_name)
             and node.is_definition()
         ):
             # Get the source range of the function
