@@ -68,8 +68,6 @@ def clang_get_func_code_mangled(file_path: str, mangled_name: str):
     )
 
 
-
-
 class InclassFunctionFinder(ast.NodeVisitor):
     """
     Visit AST to get in-class function from a Python file
@@ -113,10 +111,12 @@ def py_get_func_code_demangled(
     file_path: str, function_name: str, class_name: str = None
 ) -> Optional[str]:
     """Extracts the source code of a function from a Python file.
+
     Args:
         file_path (str): path to the source code file
         function_name (str): name of the function
         class_name (str): name of the class
+
     Returns:
         Optional[str]: source code of the function, None if not found
     """
