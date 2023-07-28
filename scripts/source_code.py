@@ -13,7 +13,10 @@ clang.cindex.Config.set_library_file(LIBCLANG)
 def clang_get_func_code(
     file_path: str,
     function_name: str,
-    get_node_name: Callable[[clang.cindex.Cursor], str] = lambda node: node.spelling,
+    correct_node: Callable[
+        [clang.cindex.Cursor, str], bool 
+    ] = lambda node, name: node.spelling
+    == name,
 ) -> Optional[str]:
     """Extracts the source code of a function from a C/C++ file.
 
@@ -38,7 +41,7 @@ def clang_get_func_code(
                 clang.cindex.CursorKind.FUNCTION_DECL,  # type: ignore
                 clang.cindex.CursorKind.CXX_METHOD,  # type: ignore
             }
-            and get_node_name(node) == function_name
+            and correct_node(node, function_name)
             and node.is_definition()
         ):
             # Get the source range of the function
@@ -57,8 +60,12 @@ def clang_get_func_code(
     return None
 
 
-def clang_get_func_code_demangled(file_path: str, function_name: str):
-    return clang_get_func_code(file_path, function_name, lambda node: node.displayname)
+def clang_get_func_code_mangled(file_path: str, mangled_name: str):
+    return clang_get_func_code(
+        file_path,
+        mangled_name,
+        lambda node, mangled_name: node.mangled_name == mangled_name,
+    )
 
 
 class InclassFunctionFinder(ast.NodeVisitor):
@@ -143,6 +150,8 @@ def py_get_func_code_demangled(
 
 CODE_EXTRACTOR = {
     "c": clang_get_func_code,
-    "cpp": clang_get_func_code_demangled,
+    "cpp": clang_get_func_code_mangled,
+    "cc": clang_get_func_code_mangled,
     "python": py_get_func_code_demangled,
 }
+

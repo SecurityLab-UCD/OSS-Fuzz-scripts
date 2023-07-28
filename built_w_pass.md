@@ -43,8 +43,8 @@ Here is a list of projects we build successfully (Projects with a link were manu
 39. miniz(auto_build_w_pass c++),c
 40. p11-kit(auto_build_w_pass c++),c
 41. pycryptodome(auto_build_w_pass c++),c
-42. grok(auto_build_w_pass c++),c++
-43. guezli(auto_build_w_pass c++),c++
+42. assimp(auto_build_w_pass c++),c++
+43. arduinojson(auto_build_w_pass c++),c++
 44. hoextdown(auto_build_w_pass c++),c++
 45. hostap(auto_build_w_pass c++),c++
 46. htslib(auto_build_w_pass c++),c++
@@ -53,7 +53,7 @@ Here is a list of projects we build successfully (Projects with a link were manu
 49. utf8proc(auto_build_w_pass c++),c
 50. w3m(auto_build_w_pass c++),c
 51. zydis(auto_build_w_pass c++),c
-52. arduinojson(auto_build_w_pass c++),c++
-53. assimp(auto_build_w_pass c++),c++
+52. 
+53. 
 54. 
 55. 
