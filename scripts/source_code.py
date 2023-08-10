@@ -49,7 +49,7 @@ def clang_get_func_code(
             end_location = node.extent.end
 
             # Extract the source code of the function
-            with open(file_path, "r") as f:
+            with open(file_path, "r", errors='ignore') as f:
                 lines = f.readlines()
                 function_source_code = "".join(
                     lines[start_location.line - 1 : end_location.line]
@@ -152,6 +152,7 @@ CODE_EXTRACTOR = {
     "c": clang_get_func_code,
     "cpp": clang_get_func_code_mangled,
     "cc": clang_get_func_code_mangled,
+    "cxx": clang_get_func_code_mangled,
     "python": py_get_func_code_demangled,
 }
 
