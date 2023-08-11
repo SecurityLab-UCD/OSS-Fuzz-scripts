@@ -14,7 +14,7 @@ def clang_get_func_code(
     file_path: str,
     function_name: str,
     correct_node: Callable[
-        [clang.cindex.Cursor, str], bool 
+        [clang.cindex.Cursor, str], bool
     ] = lambda node, name: node.spelling
     == name,
 ) -> Optional[str]:
@@ -49,7 +49,7 @@ def clang_get_func_code(
             end_location = node.extent.end
 
             # Extract the source code of the function
-            with open(file_path, "r", errors='ignore') as f:
+            with open(file_path, "r", errors="ignore") as f:
                 lines = f.readlines()
                 function_source_code = "".join(
                     lines[start_location.line - 1 : end_location.line]
@@ -148,6 +148,8 @@ def py_get_func_code_demangled(
 
 # todo: Java
 
+# Only C++ uses the file extensions (since we need to look at source file language for C++ projects),
+# use the language as specified in the project's project.yaml otherwise
 CODE_EXTRACTOR = {
     "c": clang_get_func_code,
     "cpp": clang_get_func_code_mangled,

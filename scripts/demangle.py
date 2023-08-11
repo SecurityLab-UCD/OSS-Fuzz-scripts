@@ -9,6 +9,15 @@ import cpp_demangle
 from typing import Optional
 from common import *
 from source_code import *
+from enum import IntEnum
+
+
+class SourceCodeStatus(IntEnum):
+    SUCCESS = 1  # Found source code
+    TEMPLATE = 2  # Template function (only applicable for C++ source code)
+    NOT_FOUND = 3  # Couldn't find source code
+    DEMANGLE_ERROR = 4  # Could be TEMPLATE or NOT_FOUND, couldn't demangle to check
+    PATH_ERROR = 5  # Source code path specified in JSON file could not be found
 
 
 # Get all files from docker
@@ -111,12 +120,14 @@ def main(proj_name: str, proj_language: str = "c"):
             if code_path == None:
                 warning(f"Get source code path error {file_path}")
                 data[cnt][file_func_name] = {
-                    "code": "Path Error",
+                    "code": None,
+                    "status": SourceCodeStatus.PATH_ERROR,
                     "data": data[cnt][file_func_name],
                 }
                 continue
 
             # Get function content
+            # Save original proj_language in case source file is not written in proj_language (Some C++ projects have some C source code)
             temp_proj_language = proj_language
             # Process using source code language
             if proj_language == "python":
@@ -132,39 +143,41 @@ def main(proj_name: str, proj_language: str = "c"):
             func_content = CODE_EXTRACTOR[proj_language](code_path, mangle_func_name)
             # Check func_content
             if func_content == None:
-                if (
-                    proj_language == "cpp"
-                    or proj_language == "cxx"
-                    or proj_language == "cc"
-                ):
+                # C++ file extensions
+                if proj_language in ("cpp", "cxx", "cc"):
                     try:
                         # Check to see if template function, otherwise cannot find source code
                         demangled_func_name = cpp_demangle.demangle(mangle_func_name)
                         if "<" in demangled_func_name and ">" in demangled_func_name:
                             data[cnt][file_func_name] = {
-                                "code": "Template Function",
+                                "code": func_content,
+                                "status": SourceCodeStatus.TEMPLATE,
                                 "data": data[cnt][file_func_name],
                             }
                         else:
                             data[cnt][file_func_name] = {
-                                "code": "Source code cannot be found",
+                                "code": func_content,
+                                "status": SourceCodeStatus.NOT_FOUND,
                                 "data": data[cnt][file_func_name],
                             }
                     except ValueError:
-                        # Either source code cannot be found or some unhandled type of function
+                        # Either source code cannot be found or template function, can't tell without demangling
                         data[cnt][file_func_name] = {
-                            "code": "Cannot Demangle Function Name",
+                            "code": func_content,
+                            "status": SourceCodeStatus.DEMANGLE_ERROR,
                             "data": data[cnt][file_func_name],
                         }
                 elif proj_language == "c" or proj_language == "python":
                     data[cnt][file_func_name] = {
-                        "code": "Source code cannot be found",
+                        "code": func_content,
+                        "status": SourceCodeStatus.NOT_FOUND,
                         "data": data[cnt][file_func_name],
                     }
             else:
                 # Ready to write to json
                 data[cnt][file_func_name] = {
                     "code": func_content,
+                    "status": SourceCodeStatus.SUCCESS,
                     "data": data[cnt][file_func_name],
                 }
             # Change proj_language back to original
