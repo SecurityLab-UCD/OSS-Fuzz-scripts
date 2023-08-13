@@ -7,17 +7,9 @@ import io
 from logging import error, info, warning
 import cpp_demangle
 from typing import Optional
-from common import *
-from source_code import *
-from enum import IntEnum
 
-
-class SourceCodeStatus(IntEnum):
-    SUCCESS = 1  # Found source code
-    TEMPLATE = 2  # Template function (only applicable for C++ source code)
-    NOT_FOUND = 3  # Couldn't find source code
-    DEMANGLE_ERROR = 4  # Could be TEMPLATE or NOT_FOUND, couldn't demangle to check
-    PATH_ERROR = 5  # Source code path specified in JSON file could not be found
+from scripts.common import *
+from scripts.source_code import *
 
 
 # Get all files from docker
