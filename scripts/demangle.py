@@ -6,10 +6,10 @@ import tarfile
 import io
 from logging import error, info, warning
 import cpp_demangle
-import argparse
 from typing import Optional
-from common import *
-from source_code import *
+
+from scripts.common import *
+from scripts.source_code import *
 
 
 # Get all files from docker
@@ -24,6 +24,9 @@ def copy_files_from_docker(proj_name: str, output_path: str) -> bool:
     Returns:
         bool: True if the copying was successful, False otherwise.
     """
+    # If target project files exist, return from function
+    if os.path.exists(output_path):
+        return True
     client = docker.from_env()
     image = client.images.get(f"gcr.io/oss-fuzz/{proj_name}:latest")
     container = client.containers.run(image, detach=True)
@@ -76,7 +79,7 @@ def get_source_code_path(suffix_file_path: str, output_path: str) -> Optional[st
 def main(proj_name: str, proj_language: str = "c"):
     json_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "dump", proj_name)
     output_path = os.path.join(OSSFUZZ_SCRIPTS_HOME, "output", proj_name, "codes")
-    # Get all files from docker
+    # Get all files from docker if haven't already
     if not copy_files_from_docker(proj_name, output_path):
         error(f"Fetch {proj_name} source code failed")
         return
@@ -84,8 +87,8 @@ def main(proj_name: str, proj_language: str = "c"):
     info(f"Looking for json file: {json_file_names}")
 
     for json_file_name in json_file_names:
-        file_name = os.path.splitext(json_file_name)[0]
-        # open Json file and get filename+func_name
+        # file_name = os.path.splitext(json_file_name)[0]
+        # Open json file and get filename+func_name
         with open(os.path.join(json_path, json_file_name), "r") as f:
             try:
                 data = json.load(f)
@@ -97,50 +100,85 @@ def main(proj_name: str, proj_language: str = "c"):
             file_func_name = ""
             for file_func_name_ in data[cnt]:
                 file_func_name = file_func_name_
-            # if split not matched, need to add a check
+            # If split not matched, need to add a check
             splited_file_func_name = file_func_name.split(FILE_FUNC_DELIM)
             file_path, mangle_func_name = (
                 splited_file_func_name[0],
                 splited_file_func_name[1],
             )
 
-            # if this is c file then the mangle does not exist
-            try:
-                demangle_func_name = cpp_demangle.demangle(mangle_func_name)
-            except ValueError:
-                demangle_func_name = mangle_func_name
-            if demangle_func_name == None:
-                warning(f" {mangle_func_name} demangle incorrect or unable to demangle")
-                data[cnt][
-                    file_func_name
-                ] = f" {mangle_func_name}demangle incorrect or unable to demangle"
-            else:
-                func_name = demangle_func_name.split("(")[0]
-                # Get code path from local
-                code_path = get_source_code_path(file_path, output_path)
-                if code_path == None:
-                    warning(f"Get source code path error {file_path}")
-                    data[cnt][file_func_name] = {
-                        "code": None,
-                        "data": data[cnt][file_func_name],
-                    }
-                    continue
-                # get function content check project languages
-                if proj_language == "c" or proj_language == "cpp":
-                    func_content = clang_get_func_code(code_path, func_name)
-                elif proj_language == "python":
-                    # class_name need to defined in json file
-                    func_content = py_get_func_code_demangled(
-                        code_path, func_name, class_name=None
-                    )
-                # write to json
+            # Get code path from local
+            code_path = get_source_code_path(file_path, output_path)
+            if code_path == None:
+                warning(f"Get source code path error {file_path}")
                 data[cnt][file_func_name] = {
-                    "code": func_content,
+                    "code": None,
+                    "status": SourceCodeStatus.PATH_ERROR,
                     "data": data[cnt][file_func_name],
                 }
-        # write back to JSON
+                continue
+
+            # Get function content
+            # Save original proj_language in case source file is not written in proj_language (Some C++ projects have some C source code)
+            temp_proj_language = proj_language
+            # Process using source code language
+            if proj_language == "python":
+                # Class_name need to defined in json file
+                # Have to update using CODE_EXTRACTOR for python if class_name needs to be defined
+                mangle_func_name = mangle_func_name.split("(")[0]
+            elif proj_language == "c++" or proj_language == "c":
+                # Get file extension for language of source code (since some C++ projects have some C source code)
+                filename_regex = ".+\.([A-Za-z]+)"
+                match = re.match(filename_regex, file_path)
+                proj_language = match.group(1)
+
+            func_content = CODE_EXTRACTOR[proj_language](code_path, mangle_func_name)
+            # Check func_content
+            if func_content == None:
+                # C++ file extensions
+                if proj_language in ("cpp", "cxx", "cc"):
+                    try:
+                        # Check to see if template function, otherwise cannot find source code
+                        demangled_func_name = cpp_demangle.demangle(mangle_func_name)
+                        if "<" in demangled_func_name and ">" in demangled_func_name:
+                            data[cnt][file_func_name] = {
+                                "code": func_content,
+                                "status": SourceCodeStatus.TEMPLATE,
+                                "data": data[cnt][file_func_name],
+                            }
+                        else:
+                            data[cnt][file_func_name] = {
+                                "code": func_content,
+                                "status": SourceCodeStatus.NOT_FOUND,
+                                "data": data[cnt][file_func_name],
+                            }
+                    except ValueError:
+                        # Either source code cannot be found or template function, can't tell without demangling
+                        data[cnt][file_func_name] = {
+                            "code": func_content,
+                            "status": SourceCodeStatus.DEMANGLE_ERROR,
+                            "data": data[cnt][file_func_name],
+                        }
+                elif proj_language == "c" or proj_language == "python":
+                    data[cnt][file_func_name] = {
+                        "code": func_content,
+                        "status": SourceCodeStatus.NOT_FOUND,
+                        "data": data[cnt][file_func_name],
+                    }
+            else:
+                # Ready to write to json
+                data[cnt][file_func_name] = {
+                    "code": func_content,
+                    "status": SourceCodeStatus.SUCCESS,
+                    "data": data[cnt][file_func_name],
+                }
+            # Change proj_language back to original
+            proj_language = temp_proj_language
+
+        # Write back to JSON
         with open(
             os.path.join(OSSFUZZ_SCRIPTS_HOME, "output", proj_name, json_file_name), "w"
         ) as json_file:
-            # write to JSON file
+            # Write to JSON file
             json.dump(data, json_file)
+

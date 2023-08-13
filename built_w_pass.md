@@ -34,7 +34,7 @@ Here is a list of projects we build successfully (Projects with a link were manu
 30. h3(auto_build_w_pass c++),c
 31. ibmswtpm2(auto_build_w_pass c++),c++
 32. inchi(auto_build_w_pass c++),c
-33. immer(auto_build_w_pass c++),c++
+33. zydis(auto_build_w_pass c++),c
 34. libdwarf(auto_build_w_pass c++),c
 35. libpg_query(auto_build_w_pass c++),c
 36. libyang(auto_build_w_pass c++),c
@@ -43,16 +43,16 @@ Here is a list of projects we build successfully (Projects with a link were manu
 39. miniz(auto_build_w_pass c++),c
 40. p11-kit(auto_build_w_pass c++),c
 41. pycryptodome(auto_build_w_pass c++),c
-42. assimp(auto_build_w_pass c++),c++
+42. utf8proc(auto_build_w_pass c++),c
 43. arduinojson(auto_build_w_pass c++),c++
 44. hoextdown(auto_build_w_pass c++),c++
 45. hostap(auto_build_w_pass c++),c++
 46. htslib(auto_build_w_pass c++),c++
-47. http-pattern-matcher(auto_build_w_pass c++),c++
+47. w3m(auto_build_w_pass c++),c
 48. quickjs(auto_build_w_pass c++),c
-49. utf8proc(auto_build_w_pass c++),c
-50. w3m(auto_build_w_pass c++),c
-51. zydis(auto_build_w_pass c++),c
+49. 
+50. 
+51. 
 52. 
 53. 
 54. 

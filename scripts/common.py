@@ -5,7 +5,7 @@ from os import path
 from typing import Iterable, Callable, Set, Tuple, TypeVar, Optional, Dict
 import subprocess
 from tqdm import tqdm
-
+from enum import IntEnum
 
 OSSFUZZ = os.getenv("OSSFUZZ")
 if OSSFUZZ is None:
@@ -88,4 +88,12 @@ def parallel_subprocess(
         if on_exit is not None:
             ret[i] = on_exit(p)
     return ret
+
+
+class SourceCodeStatus(IntEnum):
+    SUCCESS = 1  # Found source code
+    TEMPLATE = 2  # Template function (only applicable for C++ source code)
+    NOT_FOUND = 3  # Couldn't find source code
+    DEMANGLE_ERROR = 4  # Could be TEMPLATE or NOT_FOUND, couldn't demangle to check
+    PATH_ERROR = 5  # Source code path specified in JSON file could not be found
 
