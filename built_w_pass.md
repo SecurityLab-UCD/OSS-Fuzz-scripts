@@ -35,7 +35,7 @@ The projects that were autobuilt have their specified C++ standard within the pa
 29. croaring(auto_build_w_pass c++),c
 30. h3(auto_build_w_pass c++),c
 31. ibmswtpm2(auto_build_w_pass c++),c++
-32. inchi(auto_build_w_pass c++),c
+32. quickjs(auto_build_w_pass c++),c
 33. zydis(auto_build_w_pass c++),c
 34. libdwarf(auto_build_w_pass c++),c
 35. libpg_query(auto_build_w_pass c++),c
@@ -51,7 +51,7 @@ The projects that were autobuilt have their specified C++ standard within the pa
 45. hostap(auto_build_w_pass c++),c++
 46. htslib(auto_build_w_pass c++),c++
 47. w3m(auto_build_w_pass c++),c
-48. quickjs(auto_build_w_pass c++),c
+48. 
 49. 
 50. 
 51. 
