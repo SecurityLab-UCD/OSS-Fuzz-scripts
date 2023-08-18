@@ -27,11 +27,13 @@ if not path.exists(LIBCLANG):
     exit(1)
 
 CORES = os.getenv("CORES")
-if CORES == None:
+if CORES is None:
     import multiprocessing
 
     CORES = multiprocessing.cpu_count()
     warning(f"CORES not set, default to all cores. (nproc = {CORES})")
+else:
+    CORES = int(CORES)
 
 OSSFUZZ_SCRIPTS_HOME = os.getenv("OSSFUZZ_SCRIPTS_HOME")
 if OSSFUZZ_SCRIPTS_HOME is None:
@@ -96,4 +98,3 @@ class SourceCodeStatus(IntEnum):
     NOT_FOUND = 3  # Couldn't find source code
     DEMANGLE_ERROR = 4  # Could be TEMPLATE or NOT_FOUND, couldn't demangle to check
     PATH_ERROR = 5  # Source code path specified in JSON file could not be found
-

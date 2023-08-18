@@ -3,6 +3,7 @@ import argparse
 import logging
 
 from scripts.projects import Project
+from scripts.common import CORES
 
 
 def get_fuzz_dump(project: str, max_fuzz_time: int = 1800) -> None:
@@ -37,7 +38,7 @@ def get_fuzz_dump(project: str, max_fuzz_time: int = 1800) -> None:
         #         project, time
         #     )
         # )
-        dataset.fuzz(jobs=int(os.environ.get("CORES")), fuzztime=time, dump=True)
+        dataset.fuzz(jobs=CORES, fuzztime=time, dump=True)
 
         # Count number of json files
         num_files_dumped = 0
@@ -93,14 +94,14 @@ def get_fuzz_dump(project: str, max_fuzz_time: int = 1800) -> None:
     if longest_time_success > 0:
         # Fuzz again with the longest time that still dumps all of the json files
         dataset.fuzz(
-            jobs=int(os.environ.get("CORES")), fuzztime=longest_time_success, dump=True
+            jobs=CORES, fuzztime=longest_time_success, dump=True
         )
 
         print(f"Done fuzzing {project} for {longest_time_success} seconds")
     else:
         print(f"{project} fuzzing cannot dump for every binary, fuzzing for one second")
         # Fuzz again for one second
-        dataset.fuzz(jobs=int(os.environ.get("CORES")), fuzztime=1, dump=True)
+        dataset.fuzz(jobs=CORES, fuzztime=1, dump=True)
 
 
 def main():
