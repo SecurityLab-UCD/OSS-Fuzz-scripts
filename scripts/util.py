@@ -72,6 +72,6 @@ _B = TypeVar("_B")
 
 def concatMap(f: Callable[[_A], Iterable[_B]], xs: Iterable[_A]) -> Iterable[_B]:
     """Map a function over all the elements of a container and concatenate the resulting lists."""
-    # suger for below list comprehension:
+    # sugar for below list comprehension:
     # since this is not really human readable
     return [y for ys in xs for y in f(ys)]

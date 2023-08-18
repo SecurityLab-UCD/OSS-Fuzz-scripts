@@ -63,7 +63,7 @@ def parallel_subprocess(
     `iter` contains input that is send to each subprocess.
     `subprocess_creator` creates the subprocess and returns a `Popen`.
     After each subprocess ends, `on_exit` will go collect user defined input and return.
-    The return valus is a dictionary of inputs and outputs.
+    The return values is a dictionary of inputs and outputs.
 
     User has to guarantee elements in `iter` is unique, or the output may be incorrect.
     """
