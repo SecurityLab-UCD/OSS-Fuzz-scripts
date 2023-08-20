@@ -9,8 +9,7 @@ import yaml
 from scripts.util import (
     convert_to_seconds,
 )
-from scripts.ProjectBase import Project
-from scripts.ProjectCpp import ProjectCpp
+from scripts.Project import Project, ProjectCpp, ProjectJava, ProjectPython
 
 
 def main():
@@ -78,6 +77,10 @@ def main():
         config = yaml.safe_load(f)
     if config["language"] in ("c", "cpp", "c++"):
         dataset = ProjectCpp(args.dataset, args.fuzzout, args.dumpout, config)
+    elif config["language"] == "jvm":
+        dataset = ProjectJava(args.dataset, args.fuzzout, args.dumpout, config)
+    elif config["language"] == "python":
+        dataset = ProjectPython(args.dataset, args.fuzzout, args.dumpout, config)
     else:
         dataset = Project(args.dataset, args.fuzzout, args.dumpout, config)
 
