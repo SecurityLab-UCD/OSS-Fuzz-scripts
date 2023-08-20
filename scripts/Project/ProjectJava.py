@@ -33,7 +33,7 @@ class ProjectJava(Project):
         self.build()
 
         os.system(f"mv {dockerfile}.bak {dockerfile}")
-        shutil.rmtree(f"{OSSFUZZ}/projects/{self.project}/{agent}")
+        os.remove(f"{OSSFUZZ}/projects/{self.project}/{agent}")
 
     def auto_build_w_pass(self, cpp: str):
         raise NotImplementedError
