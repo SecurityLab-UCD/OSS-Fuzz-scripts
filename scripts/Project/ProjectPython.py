@@ -3,7 +3,7 @@ import shutil
 from os import path
 from logging import error, info, warning
 from scripts.common import OSSFUZZ, OSSFUZZ_SCRIPTS_HOME
-from ProjectBase import Project
+from .ProjectBase import Project
 from scripts.demangle import main as main_post_process
 
 
