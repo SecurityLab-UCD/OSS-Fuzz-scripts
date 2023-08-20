@@ -4,11 +4,8 @@ import os
 from typing import List, Tuple
 from logging import error, info, warning
 
-from demangle import main as main_post_process
 import json
 import pandas as pd
-import shutil
-import yaml
 from scripts.util import (
     oss_fuzz_one_target,
     concatMap,
@@ -17,7 +14,7 @@ from scripts.fuzzer_stats import FuzzerStats, summarize_fuzzer_stats_df
 
 
 class Project:
-    def __init__(self, project: str, fuzzdir: str, dumpdir: str):
+    def __init__(self, project: str, fuzzdir: str, dumpdir: str, config: dict):
         self.project = project
         self.fuzzdir = path.join(OSSFUZZ_SCRIPTS_HOME, fuzzdir)
         self.dumpdir = path.join(OSSFUZZ_SCRIPTS_HOME, dumpdir)
@@ -26,40 +23,13 @@ class Project:
         self.targets: List[str] = []
         self.project_oss_dir = path.join(OSSFUZZ, "projects", self.project)
         self.file_func_delim = FILE_FUNC_DELIM
-        with open(f"{self.project_oss_dir}/project.yaml", "r") as f:
-            self.config = yaml.safe_load(f)
+        self.config = config
 
     def build(self):
         os.system(
             f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer none --clean"
         )
         self._update_targets()
-
-    def build_w_pass(self, build_script: str = "build_w_pass.sh"):
-        dockerfile = f"{OSSFUZZ}/projects/{self.project}/Dockerfile"
-        os.system(f"cp {dockerfile} {dockerfile}.bak")
-        os.system(
-            f"rsync -av --exclude='.*' {OSSFUZZ_SCRIPTS_HOME}/ReportFunctionExecutedPass {OSSFUZZ}/projects/{self.project}"
-        )
-        report_pass_config = (
-            f"ENV REPORT_PASS=$SRC/{self.project}/ReportFunctionExecutedPass\n"
-            f"COPY {build_script} $SRC/build.sh\n"
-            "COPY ReportFunctionExecutedPass $REPORT_PASS\n"
-            "RUN cd $REPORT_PASS && ./init.sh\n"
-        )
-
-        with open(dockerfile, "a") as f:
-            f.write("".join(report_pass_config))
-
-        # backup previous built fuzzers
-        build_dir = f"{OSSFUZZ}/build/out/{self.project}"
-        if path.isdir(build_dir):
-            os.system(f"mv {build_dir} {build_dir}_bak")
-
-        self.build()
-
-        os.system(f"mv {dockerfile}.bak {dockerfile}")
-        shutil.rmtree(f"{OSSFUZZ}/projects/{self.project}/ReportFunctionExecutedPass")
 
     def mkdir_if_doesnt_exist(self):
         if not path.isdir(self.fuzzdir):
@@ -143,10 +113,6 @@ class Project:
             if any([f.endswith(".json") for f in outfiles]):
                 os.system(f"mv {OSSFUZZ}/build/out/{self.project}/*.json {dump_dir}")
 
-    def postprocess(self):
-        proj_name = self.project
-        main_post_process(proj_name, self.config["language"])
-
     def get_project_stats(self) -> pd.DataFrame:
         def analyze_fuzzer(fname: str) -> FuzzerStats:
             dumpfile = path.join(self.proj_dumpout, fname)
@@ -171,51 +137,16 @@ class Project:
         df = self.get_project_stats()
         summarize_fuzzer_stats_df(df)
 
-    def auto_build_w_pass(self, cpp: str):
-        """build a project with pass automatically
-
-        Args:
-            cpp (str): stdc++ or c++
-        """
-        build_sh = path.join(self.project_oss_dir, "build.sh")
-        build_w_pass_sh = path.join(self.project_oss_dir, "build_w_pass.sh")
-        if path.isfile(build_w_pass_sh):
-            info("build_w_pass.sh already exists")
-            self.build_w_pass()
-            return
-
-        if not self._is_auto_supported():
-            warning(f"auto build is not supported for {self.config['language']}")
-            return
-
-        common_report_flags = [
-            'REPORT_FLAGS="-Xclang -load -Xclang $REPORT_PASS/libReportPass.so -flegacy-pass-manager"\n',
-            f'REPORTER_FLAGS="$REPORT_PASS/reporter.{cpp}.o -l{cpp} -pthread -lm"\n',
-            'export CFLAGS="${CFLAGS:=} $REPORT_FLAGS $REPORTER_FLAGS"\n',
-            'export CXXFLAGS="${CXXFLAGS:=} $REPORT_FLAGS $REPORTER_FLAGS"\n',
-        ]
-
-        with open(build_sh, "r") as f:
-            build_lines = f.readlines()
-
-        # todo: find better way to insert the flags
-        # for now, just hope this comment is build.sh
-        build_comment = f"# build {self.project}\n"
-        insertion_point = (
-            build_lines.index(build_comment) if build_comment in build_lines else 1
-        )
-        build_w_pass_lines = (
-            build_lines[:insertion_point]
-            + common_report_flags
-            + build_lines[insertion_point:]
-        )
-        with open(build_w_pass_sh, "w") as f:
-            f.writelines(build_w_pass_lines)
-
-        self.build_w_pass()
-        os.remove(build_w_pass_sh)
-
     def _is_auto_supported(self):
         lang = self.config["language"]
         supported_langs = ["c", "cpp", "c++"]
         return lang.lower() in supported_langs
+
+    def build_w_pass(self, build_script: str = "build_w_pass.sh"):
+        raise NotImplementedError
+
+    def auto_build_w_pass(self, cpp: str):
+        raise NotImplementedError
+
+    def postprocess(self):
+        raise NotImplementedError

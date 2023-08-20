@@ -1,19 +1,16 @@
 from common import *
 from os import path
 import os
-from typing import List, Tuple
 from logging import error, info, warning
 
 import argparse
-import warnings
-import json
 import pandas as pd
-import shutil
 import yaml
 from scripts.util import (
     convert_to_seconds,
 )
 from scripts.ProjectBase import Project
+from scripts.ProjectCpp import ProjectCpp
 
 
 def main():
@@ -76,8 +73,13 @@ def main():
     if args.dataset not in available_projects:
         unreachable("Unknown dataset provided.")
 
-    # todo: read project language from yaml and use corresponding project class
-    dataset = Project(args.dataset, args.fuzzout, args.dumpout)
+    project_oss_dir = path.join(OSSFUZZ, "projects", args.dataset)
+    with open(f"{project_oss_dir}/project.yaml", "r") as f:
+        config = yaml.safe_load(f)
+    if config["language"] in ("c", "cpp", "c++"):
+        dataset = ProjectCpp(args.dataset, args.fuzzout, args.dumpout, config)
+    else:
+        dataset = Project(args.dataset, args.fuzzout, args.dumpout, config)
 
     if args.pipeline == "all":
         dataset.build()
