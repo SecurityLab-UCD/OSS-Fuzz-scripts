@@ -14,7 +14,7 @@ class ProjectJava(Project):
         agent = "java-io-capture-1.0-SNAPSHOT.jar"
         shutil.copyfile(
             f"{OSSFUZZ_SCRIPTS_HOME}/java-io-capture/target/{agent}",
-            f"{OSSFUZZ}/projects/{self.project}",
+            f"{OSSFUZZ}/projects/{self.project}/{agent}",
         )
         report_agent_config = (
             f"ENV REPORT_AGENT=$SRC/{self.project}/{agent}\n"
