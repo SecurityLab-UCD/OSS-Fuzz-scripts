@@ -5,15 +5,12 @@ from typing import List, Tuple
 from logging import error, info, warning
 from functools import partial, reduce
 
-# ToDo: comform if this import is deprecated
-# from demangle import get_source_from_docker
 from demangle import main as main_post_process
 import argparse
 import warnings
 import json
 import pandas as pd
 import shutil
-import cpp_demangle
 import yaml
 from scripts.util import (
     oss_fuzz_one_target,
@@ -283,8 +280,8 @@ def main():
 
     args = parser.parse_args()
 
-    aviliable_porjects = os.listdir(path.join(OSSFUZZ, "projects"))
-    if args.dataset not in aviliable_porjects:
+    available_projects = os.listdir(path.join(OSSFUZZ, "projects"))
+    if args.dataset not in available_projects:
         unreachable("Unknown dataset provided.")
 
     dataset = Project(args.dataset, args.fuzzout, args.dumpout)
@@ -310,7 +307,7 @@ def main():
     elif args.pipeline == "summarize":
         dataset.summarize()
     else:
-        unreachable("Unkown pipeline provided")
+        unreachable("Unknown pipeline provided")
 
 
 # main function
