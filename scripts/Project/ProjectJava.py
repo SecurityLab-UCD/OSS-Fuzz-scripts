@@ -47,7 +47,33 @@ class ProjectJava(Project):
         os.remove(f"{OSSFUZZ}/projects/{self.project}/{agent}")
 
     def auto_build_w_pass(self, cpp: str):
-        raise NotImplementedError
+        """build a project with pass automatically
+
+        Args:
+            cpp (str): stdc++ or c++
+        """
+        build_sh = path.join(self.project_oss_dir, "build.sh")
+        build_w_pass_sh = path.join(self.project_oss_dir, "build_w_pass.sh")
+        if path.isfile(build_w_pass_sh):
+            info("build_w_pass.sh already exists")
+            self.build_w_pass()
+            return
+
+        if not self._is_auto_supported():
+            warning(f"auto build is not supported for {self.config['language']}")
+            return
+
+        with open(build_sh, "r") as f:
+            build_lines = f.readlines()
+
+        jvm_arg_w_agent = '--jvm_args="-javaagent:$REPORT_AGENT" \\'
+        for i, line in reversed(list(enumerate(build_lines))):
+            if line.startswith("—jvm_args="):
+                build_lines[i] = jvm_arg_w_agent
+                break  # Exit the loop if the first occurrence is replaced
+
+        self.build_w_pass()
+        os.remove(build_w_pass_sh)
 
     def postprocess(self):
         raise NotImplementedError
