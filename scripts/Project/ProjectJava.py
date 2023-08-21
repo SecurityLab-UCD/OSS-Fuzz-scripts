@@ -24,8 +24,11 @@ class ProjectJava(Project):
             f"{OSSFUZZ_SCRIPTS_HOME}/java-io-capture/target/{agent}",
             f"{OSSFUZZ}/projects/{self.project}/{agent}",
         )
+        # some project's path is not its name
+        # for example, the project name is "antlr4-java",
+        # but the path is "antlr4"
         report_agent_config = (
-            f"ENV REPORT_AGENT=$SRC/{self.project}/{agent}\n"
+            f"ENV REPORT_AGENT=$SRC/{agent}\n"
             f"COPY {build_script} $SRC/build.sh\n"
             f"COPY {agent} $REPORT_AGENT\n"
         )
