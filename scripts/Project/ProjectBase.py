@@ -139,7 +139,7 @@ class Project:
 
     def _is_auto_supported(self):
         lang = self.config["language"]
-        supported_langs = ["c", "cpp", "c++"]
+        supported_langs = ["c", "cpp", "c++", "jvm"]
         return lang.lower() in supported_langs
 
     def build_w_pass(self, build_script: str = "build_w_pass.sh"):
