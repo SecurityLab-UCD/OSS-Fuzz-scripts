@@ -72,6 +72,9 @@ class ProjectJava(Project):
                 build_lines[i] = jvm_arg_w_agent
                 break  # Exit the loop if the first occurrence is replaced
 
+        with open(build_w_pass_sh, "w") as f:
+            f.writelines(build_lines)
+
         self.build_w_pass()
         os.remove(build_w_pass_sh)
 
