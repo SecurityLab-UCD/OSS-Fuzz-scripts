@@ -10,13 +10,10 @@ from scripts.demangle import main as main_post_process
 class ProjectJava(Project):
     def build(self):
         # ! test on antlr4-java
-        # if --sanitizer none and --clean are used at same time, the build will fail
+        # --sanitizer none will cause build failure
         # to reproduce, run one of the following commands
-        # python3 ./oss-fuzz/infra/helper.py build_fuzzers antlr4-java --sanitizer none --clean
-        # python3 scripts/programs.py -d antlr4-java -p build
-        os.system(
-            f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer none"
-        )
+        # python3 ./oss-fuzz/infra/helper.py build_fuzzers antlr4-java --sanitizer none
+        os.system(f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project}")
         self._update_targets()
 
     def build_w_pass(self, build_script: str = "build_w_pass.sh"):
