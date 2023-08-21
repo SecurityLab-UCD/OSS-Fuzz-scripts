@@ -6,7 +6,7 @@ tmp
 O*
 list.txt
 output*
-*/__pycache__
+**/__pycache__/*
 lib
 *.txt
 !requirements.txt
