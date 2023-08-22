@@ -27,11 +27,13 @@ if not path.exists(LIBCLANG):
     exit(1)
 
 CORES = os.getenv("CORES")
-if CORES == None:
+if CORES is None:
     import multiprocessing
 
     CORES = multiprocessing.cpu_count()
     warning(f"CORES not set, default to all cores. (nproc = {CORES})")
+else:
+    CORES = int(CORES)
 
 OSSFUZZ_SCRIPTS_HOME = os.getenv("OSSFUZZ_SCRIPTS_HOME")
 if OSSFUZZ_SCRIPTS_HOME is None:
@@ -63,7 +65,7 @@ def parallel_subprocess(
     `iter` contains input that is send to each subprocess.
     `subprocess_creator` creates the subprocess and returns a `Popen`.
     After each subprocess ends, `on_exit` will go collect user defined input and return.
-    The return valus is a dictionary of inputs and outputs.
+    The return values is a dictionary of inputs and outputs.
 
     User has to guarantee elements in `iter` is unique, or the output may be incorrect.
     """
@@ -96,4 +98,3 @@ class SourceCodeStatus(IntEnum):
     NOT_FOUND = 3  # Couldn't find source code
     DEMANGLE_ERROR = 4  # Could be TEMPLATE or NOT_FOUND, couldn't demangle to check
     PATH_ERROR = 5  # Source code path specified in JSON file could not be found
-

@@ -13,23 +13,23 @@ class FuzzerStats:
             lang (str): language of project
             name (str): name of fuzzer
             json_dump (dict): result of running Project.fuzz_w_pass()
-            delim (str): demiliter used to split function name from fuzzer name
+            delim (str): delimiter used to split function name from fuzzer name
         """
         self.name = name
         self.stats = []
         for d in json_dump:
             for key in d:
-                io_pirs = d[key]
+                io_pairs = d[key]
                 summarize_dict = {}
                 func = key.split(delim)[1]
                 summarize_dict["project"] = project
                 summarize_dict["language"] = lang
                 summarize_dict["fuzzer"] = self.name
                 summarize_dict["function"] = func
-                summarize_dict["deterministic"] = is_deterministic(io_pirs)
-                summarize_dict["unique_inputs"] = len(io_pirs)
+                summarize_dict["deterministic"] = is_deterministic(io_pairs)
+                summarize_dict["unique_inputs"] = len(io_pairs)
                 summarize_dict["total_executions"] = sum(
-                    map(lambda x: len(x[1]), io_pirs)
+                    map(lambda x: len(x[1]), io_pairs)
                 )
                 self.stats.append(summarize_dict)
 

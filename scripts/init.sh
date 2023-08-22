@@ -18,3 +18,8 @@ cd $OSSFUZZ_SCRIPTS_HOME
 # get oss-fuzz and ReportPass
 git submodule init
 git submodule update
+
+# build Java ReportAgent
+cd $OSSFUZZ_SCRIPTS_HOME/java-io-capture
+mvn clean package
+cd $OSSFUZZ_SCRIPTS_HOME

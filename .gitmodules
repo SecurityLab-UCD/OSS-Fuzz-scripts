@@ -6,3 +6,6 @@
 	path = oss-fuzz
 	url = https://github.com/SecurityLab-UCD/oss-fuzz.git
 	branch = master
+[submodule "java-io-capture"]
+	path = java-io-capture
+	url = https://github.com/SecurityLab-UCD/java-io-capture.git
