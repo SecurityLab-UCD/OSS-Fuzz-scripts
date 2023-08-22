@@ -13,6 +13,3 @@ class ProjectPython(Project):
 
     def auto_build_w_pass(self, cpp: str):
         raise NotImplementedError
-
-    def postprocess(self):
-        raise NotImplementedError

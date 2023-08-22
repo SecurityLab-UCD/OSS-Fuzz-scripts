@@ -78,6 +78,3 @@ class ProjectCpp(Project):
         self.build_w_pass()
         os.remove(build_w_pass_sh)
 
-    def postprocess(self):
-        proj_name = self.project
-        main_post_process(proj_name, self.config["language"])

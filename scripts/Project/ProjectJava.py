@@ -77,6 +77,3 @@ class ProjectJava(Project):
 
         self.build_w_pass()
         os.remove(build_w_pass_sh)
-
-    def postprocess(self):
-        raise NotImplementedError

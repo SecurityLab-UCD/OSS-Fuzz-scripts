@@ -142,11 +142,14 @@ class Project:
         supported_langs = ["c", "cpp", "c++", "jvm"]
         return lang.lower() in supported_langs
 
+    def postprocess(self):
+        import scripts.demangle as ossfuzz_demangle
+
+        proj_name = self.project
+        ossfuzz_demangle.main(proj_name, self.config["language"])
+
     def build_w_pass(self, build_script: str = "build_w_pass.sh"):
         raise NotImplementedError
 
     def auto_build_w_pass(self, cpp: str):
-        raise NotImplementedError
-
-    def postprocess(self):
         raise NotImplementedError
