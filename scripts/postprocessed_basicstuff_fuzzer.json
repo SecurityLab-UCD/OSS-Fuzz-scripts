@@ -1,0 +1,20 @@
+[
+    {
+        "file_func_name": "/src/coturn/src/client/ns_turn_msg.c?stun_get_method_str",
+        "code": "uint16_t stun_get_method_str(const uint8_t *buf, size_t len) {\n {\n  if (!buf || len < 2)\n    return (uint16_t)-1;\n\n  uint16_t tt = nswap16(((const uint16_t *)buf)[0]);\n\n  return (tt & 0x000F) | ((tt & 0x00E0) >> 1) | ((tt & 0x0E00) >> 2) | ((tt & 0x3000) >> 2);\n}",
+        "status": null,
+        "data": [
+            "15648#2077,1610628384;2077,1610628384;2077,1610628384",
+            "292#2305,1610613028"
+        ]
+    },
+    {
+        "file_func_name": "/src/coturn/src/client/ns_turn_msg.c?stun_attr_get_value",
+        "code": "const uint8_t *stun_attr_get_value(stun_attr_ref attr) {\n  if (attr) {\n {\n    int len = (int)(nswap16(((const uint16_t *)attr)[1]));\n    if (len < 1)\n      return NULL;\n    return ((const uint8_t *)attr) + 4;\n  }",
+        "status": null,
+        "data": [
+            "5120#-1711959765,335546368;1318421155,335546368;212331162,335546368;1696887030,335546368;1696887030,335546368;1696887030,335546368;-1711959765,335546368;-1711959765,335546368;212331162,335546368;212331162,335546368",
+            "1024#-1773371968,67119232;1275853768,67119232;-818185499,67119232;-1773371968,67119232;-1773371968,67119232;-1773371968,67119232;-1773371968,67119232;-1773371968,67119232;-818185499,67119232;-1773371968,67119232"
+        ]
+    }
+]
