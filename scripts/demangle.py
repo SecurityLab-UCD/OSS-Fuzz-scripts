@@ -10,6 +10,7 @@ from typing import Optional
 
 from scripts.common import *
 from scripts.source_code import *
+from scripts.func_data import SourceCodeStatus, FunctionData
 
 
 # Get all files from docker
@@ -31,8 +32,8 @@ def copy_files_from_docker(proj_name: str, output_path: str) -> bool:
     image = client.images.get(f"gcr.io/oss-fuzz/{proj_name}:latest")
     container = client.containers.run(image, detach=True)
     try:
-        stream, _ = container.get_archive("/src")
-    except docker.errors.NotFound:
+        stream, _ = container.get_archive("/src")  # type: ignore
+    except docker.errors.NotFound:  # type: ignore
         error(f"Docker  {proj_name} path /src  NOT found\n")
         return False
 
@@ -45,8 +46,8 @@ def copy_files_from_docker(proj_name: str, output_path: str) -> bool:
     with tarfile.open(fileobj=fileobj) as tar:
         tar.extractall(output_path)
 
-    container.stop()
-    container.remove()
+    container.stop()  # type: ignore
+    container.remove()  # type: ignore
     return True
 
 
@@ -61,7 +62,7 @@ def get_source_code_path(suffix_file_path: str, output_path: str) -> Optional[st
     Returns:
         str: target source code file path.
     """
-    # Transliteration special characterss, replace special characters with \ ahead of themselves
+    # Transliteration special characters, replace special characters with \ ahead of themselves
     pattern = r"[\[\].,{}()\W_]"
     suffix_file_path = re.sub(pattern, r"\\\g<0>", suffix_file_path)
 
@@ -106,6 +107,7 @@ def main(proj_name: str, proj_language: str = "c"):
                 splited_file_func_name[0],
                 splited_file_func_name[1],
             )
+            # todo: use FunctionData class for new format
 
             # Get code path from local
             code_path = get_source_code_path(file_path, output_path)
@@ -130,7 +132,8 @@ def main(proj_name: str, proj_language: str = "c"):
                 # Get file extension for language of source code (since some C++ projects have some C source code)
                 filename_regex = ".+\.([A-Za-z]+)"
                 match = re.match(filename_regex, file_path)
-                proj_language = match.group(1)
+                if match is not None:
+                    proj_language = match.group(1)
 
             func_content = CODE_EXTRACTOR[proj_language](code_path, mangle_func_name)
             # Check func_content
@@ -181,4 +184,3 @@ def main(proj_name: str, proj_language: str = "c"):
         ) as json_file:
             # Write to JSON file
             json.dump(data, json_file)
-
