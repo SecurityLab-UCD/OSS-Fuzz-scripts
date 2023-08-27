@@ -5,7 +5,9 @@ from os import path
 import argparse
 import logging
 from tqdm import tqdm
-from multiprocessing import Pool
+from pathos.multiprocessing import (
+    ProcessingPool,
+)  # multiprocessing.Pool for local functions
 
 
 def convert_one_file(replace: bool):
@@ -75,7 +77,7 @@ def main(args):
                         file_paths.append(path.join(root, f))
 
     logging.info(f"Processing {len(file_paths)} files")
-    with Pool(args.jobs) as p:
+    with ProcessingPool(args.jobs) as p:
         list(
             tqdm(
                 p.imap(convert_one_file(args.replace), file_paths),
