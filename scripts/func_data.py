@@ -59,11 +59,16 @@ class FunctionData:
             "code": self.code,
             "status": self.status,
             "data": [
-                self.stringify_one_iopair(
-                    exec, io_delim="#", output_delim=";", val_delim=","
-                )
+                self.stringify_one_iopair(exec, io_delim, output_delim, val_delim)
                 for exec in self.data
             ]
             if self.data is not None
             else None,
         }
+
+
+class FunctionDataJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, FunctionData):
+            return o.to_stringified_dict()
+        return json.JSONEncoder.default(self, o)

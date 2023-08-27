@@ -1,5 +1,5 @@
 import json
-from scripts.func_data import FunctionData
+from scripts.func_data import FunctionData, FunctionDataJSONEncoder
 import os
 from os import path
 
@@ -36,20 +36,18 @@ def main():
         },
     ]
     """
-    file_name = "basicstuff_fuzzer.json"
-    with open(f"scripts/{file_name}", "r") as f:
+    file_name = "fuzz_example.json"
+    with open(f"{file_name}", "r") as f:
         all_function_data = json.load(f)
         postprocessed_function_data = []
         for func in all_function_data:
             func_name = list(func.keys())[0]
             postprocessed_function_data.append(
-                FunctionData(
-                    file_func_name=func_name, **func[func_name]
-                ).to_stringified_dict()
+                FunctionData(file_func_name=func_name, **func[func_name])
             )
 
-    with open(f"scripts/postprocessed_{file_name}", "w") as f:
-        json.dump(postprocessed_function_data, f)
+    with open(f"postprocessed_{file_name}", "w") as f:
+        json.dump(postprocessed_function_data, f, cls=FunctionDataJSONEncoder)
 
 
 if __name__ == "__main__":
