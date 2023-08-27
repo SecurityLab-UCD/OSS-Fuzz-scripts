@@ -10,11 +10,7 @@ from typing import Optional
 
 from scripts.common import *
 from scripts.source_code import *
-<<<<<<< HEAD
 from scripts.func_data import SourceCodeStatus, FunctionData, FunctionDataJSONEncoder
-=======
-from scripts.func_data import SourceCodeStatus, FunctionData
->>>>>>> 132ed24 (add FunctionData class to postprocess data to model friendly format)
 
 
 # Get all files from docker
