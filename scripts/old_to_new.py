@@ -60,7 +60,10 @@ def main(args):
                     )
             # Remove the file extension
             file_name = os.path.splitext(file_path)[0]
-            with open(f"{file_name}.postprocessed.json", "w") as f:
+            result_file_path = (
+                file_path if args.replace else f"{file_name}.postprocessed.json"
+            )
+            with open(result_file_path, "w") as f:
                 json.dump(postprocessed_function_data, f, cls=FunctionDataJSONEncoder)
         except Exception as e:
             logging.error(f"Error processing {file_path}: {e}")
@@ -80,6 +83,12 @@ if __name__ == "__main__":
         type=str,
         default="fuzz_example.json",
         help="path to file or dir to convert",
+    )
+    parser.add_argument(
+        "--replace",
+        action="store_true",
+        default=False,
+        help="replace the original file",
     )
     args = parser.parse_args()
 
