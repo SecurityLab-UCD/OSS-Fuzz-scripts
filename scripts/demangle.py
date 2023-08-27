@@ -141,7 +141,6 @@ def main(proj_name: str, proj_language: str = "c"):
                 splited_file_func_name[0],
                 splited_file_func_name[1],
             )
-            # todo: use FunctionData class for new format
             curr_func_data = FunctionData(
                 file_func_name, data=data[cnt][file_func_name]
             )
