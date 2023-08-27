@@ -20,7 +20,7 @@ class FunctionData:
 
     @staticmethod
     def stringify_one_iopair(
-        io: list[list[str]], io_delim="#", output_delim=";", val_delim=","
+        io: list[list[str]], io_delim="#", output_delim=";", val_delim="<SEP>"
     ) -> str:
         """Stringify one io pair reporting
 
@@ -42,7 +42,7 @@ class FunctionData:
         return f"{inputs_str}{io_delim}{outputs_str}"
 
     def to_stringified_dict(
-        self, io_delim="#", output_delim=";", val_delim=","
+        self, io_delim="#", output_delim=";", val_delim="<SEP>"
     ) -> dict:
         """__dict__ but "data" is stringified
 
