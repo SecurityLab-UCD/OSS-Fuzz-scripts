@@ -4,6 +4,32 @@ import os
 from os import path
 import argparse
 import logging
+from tqdm import tqdm
+from multiprocessing import Pool
+
+
+def convert_one_file(replace: bool):
+    def convert(file_path: str):
+        try:
+            with open(f"{file_path}", "r") as f:
+                all_function_data = json.load(f)
+                postprocessed_function_data = []
+                for func in all_function_data:
+                    func_name = list(func.keys())[0]
+                    postprocessed_function_data.append(
+                        FunctionData(file_func_name=func_name, **func[func_name])
+                    )
+            # Remove the file extension
+            file_name = os.path.splitext(file_path)[0]
+            result_file_path = (
+                file_path if replace else f"{file_name}.postprocessed.json"
+            )
+            with open(result_file_path, "w") as f:
+                json.dump(postprocessed_function_data, f, cls=FunctionDataJSONEncoder)
+        except Exception as e:
+            logging.error(f"Error processing {file_path}: {e}")
+
+    return convert
 
 
 def main(args):
@@ -48,25 +74,14 @@ def main(args):
                     if f.endswith(".json"):
                         file_paths.append(path.join(root, f))
 
-    for file_path in file_paths:
-        try:
-            with open(f"{file_path}", "r") as f:
-                all_function_data = json.load(f)
-                postprocessed_function_data = []
-                for func in all_function_data:
-                    func_name = list(func.keys())[0]
-                    postprocessed_function_data.append(
-                        FunctionData(file_func_name=func_name, **func[func_name])
-                    )
-            # Remove the file extension
-            file_name = os.path.splitext(file_path)[0]
-            result_file_path = (
-                file_path if args.replace else f"{file_name}.postprocessed.json"
+    logging.info(f"Processing {len(file_paths)} files")
+    with Pool(args.jobs) as p:
+        list(
+            tqdm(
+                p.imap(convert_one_file(args.replace), file_paths),
+                total=len(file_paths),
             )
-            with open(result_file_path, "w") as f:
-                json.dump(postprocessed_function_data, f, cls=FunctionDataJSONEncoder)
-        except Exception as e:
-            logging.error(f"Error processing {file_path}: {e}")
+        )
 
 
 if __name__ == "__main__":
@@ -89,6 +104,9 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help="replace the original file",
+    )
+    parser.add_argument(
+        "--jobs", "-j", type=int, default=1, help="number of cores to use"
     )
     args = parser.parse_args()
 
