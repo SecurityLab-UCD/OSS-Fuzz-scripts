@@ -58,10 +58,10 @@ def main(args):
         {
             "file_func_name": "file_name#func_name",
             "code": "int func_name1(int a, int b) { return a + b; }",
-            "status": "OK",
+            "status": 0,
             "data": [
-                "1,2#3;4",
-                "2,3#5;6"
+                "1<SEP>2#3;4",
+                "2<SEP>3#5;6"
             ]
         },
     ]
