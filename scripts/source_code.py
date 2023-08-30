@@ -183,3 +183,34 @@ def py_get_imported_modules(code: str) -> List[str]:
                 for alias in node.names:
                     module_names.append(alias.name.split(".")[0])
     return module_names
+
+
+def c_get_params(code: str) -> Optional[list[str]]:
+    """get parameters of a C function
+
+    Args:
+        code (str): source code of the function
+
+    Returns:
+        Optional[list[str]]: list of parameters, None if `code` is not a function
+    """
+
+    def walk_tree_for_params(node):
+        if node.kind == clang.cindex.CursorKind.FUNCTION_DECL:  # type: ignore
+            function_name = node.spelling
+            parameters = [param.spelling for param in node.get_arguments()]
+
+            return parameters
+
+        for child in node.get_children():
+            result = walk_tree_for_params(child)
+            if result:
+                return result
+
+        return None
+
+    index = clang.cindex.Index.create()
+    unsaved_files = [("source.c", code)]
+    tu = index.parse("source.c", unsaved_files=unsaved_files)
+
+    return walk_tree_for_params(tu.cursor)
