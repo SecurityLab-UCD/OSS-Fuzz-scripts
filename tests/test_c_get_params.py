@@ -1,6 +1,9 @@
+# type: ignore
+
 import unittest
-from scripts.source_code import c_get_params
+from scripts.source_code import c_get_params, is_c_primitive_type
 import logging
+from clang.cindex import TypeKind as CTypeKind
 
 
 class TestGetParamsC(unittest.TestCase):
@@ -8,7 +11,10 @@ class TestGetParamsC(unittest.TestCase):
         code = "int add(int x, int y) { return x + y; }"
         params = c_get_params(code)
 
-        self.assertEqual(params, [("int", "x"), ("int", "y")])
+        self.assertEqual(params, [(CTypeKind.INT, "x"), (CTypeKind.INT, "y")])
+        if params is not None:
+            for param in params:
+                self.assertTrue(is_c_primitive_type(param[0]))
 
     def test_c_no_param(self):
         code = "void do_nothing() { return; }"

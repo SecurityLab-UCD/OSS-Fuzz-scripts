@@ -1,4 +1,6 @@
 import clang.cindex
+from clang.cindex import TypeKind as CTypeKind
+import clang.enumerations
 import inspect
 import importlib.util
 import ast
@@ -185,20 +187,20 @@ def py_get_imported_modules(code: str) -> List[str]:
     return module_names
 
 
-def c_get_params(code: str) -> Optional[list[tuple[str, str]]]:
+def c_get_params(code: str) -> Optional[list[tuple[CTypeKind, str]]]:
     """get parameters of a C function
 
     Args:
         code (str): source code of the function
 
     Returns:
-        Optional[list[str]]: list of (type, name) parameter pairs, None if `code` is not a function
+        Optional[list[tuple[CTypeKind, str]]]: list of (type, name) parameter pairs, None if `code` is not a function
     """
 
     def walk_tree_for_params(node):
         if node.kind == clang.cindex.CursorKind.FUNCTION_DECL:  # type: ignore
             parameters = [
-                (param.type.spelling, param.spelling) for param in node.get_arguments()
+                (param.type.kind, param.spelling) for param in node.get_arguments()
             ]
             return parameters
 
@@ -214,3 +216,35 @@ def c_get_params(code: str) -> Optional[list[tuple[str, str]]]:
     tu = index.parse("source.c", unsaved_files=unsaved_files)
 
     return walk_tree_for_params(tu.cursor)
+
+
+def is_c_primitive_type(type_kind: CTypeKind) -> bool:
+    """Checks if a type is a C primitive type
+
+    Args:
+        type_kind (CTypeKind): a clang TypeKind object
+
+    Returns:
+        bool: True if the type is a C primitive type, False otherwise
+    """
+    # these function covers
+    # TypeKind.BOOL,
+    # TypeKind.CHAR_U,
+    # TypeKind.UCHAR,
+    # TypeKind.CHAR16,
+    # TypeKind.CHAR32,
+    # TypeKind.USHORT,
+    # TypeKind.UINT,
+    # TypeKind.ULONG,
+    # TypeKind.ULONGLONG,
+    # TypeKind.CHAR_S,
+    # TypeKind.SCHAR,
+    # TypeKind.WCHAR,
+    # TypeKind.SHORT,
+    # TypeKind.INT,
+    # TypeKind.LONG,
+    # TypeKind.LONGLONG,
+    # TypeKind.FLOAT,
+    # TypeKind.DOUBLE,
+    # TypeKind.LONGDOUBLE,
+    return CTypeKind.BOOL.value <= type_kind.value <= CTypeKind.LONGDOUBLE.value  # type: ignore
