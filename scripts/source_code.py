@@ -1,5 +1,5 @@
 import clang.cindex
-from clang.cindex import TypeKind as CTypeKind
+from clang.cindex import TypeKind as CTypeKind, TokenKind as CTokenKind
 import clang.enumerations
 import inspect
 import importlib.util
@@ -160,6 +160,10 @@ CODE_EXTRACTOR = {
     "python": py_get_func_code_demangled,
 }
 
+####################################################################################################
+# *  "Purity" check for C/C++ functions
+####################################################################################################
+
 
 def py_get_imported_modules(code: str) -> List[str]:
     """given python source code, return all imported modules' name
@@ -194,7 +198,8 @@ def c_get_params(code: str) -> Optional[list[tuple[CTypeKind, str]]]:
         code (str): source code of the function
 
     Returns:
-        Optional[list[tuple[CTypeKind, str]]]: list of (type, name) parameter pairs, None if `code` is not a function
+        Optional[list[tuple[CTypeKind, str]]]:
+            list of (type, name) parameter pairs, None if `code` is not a function
     """
 
     def walk_tree_for_params(node):
@@ -248,3 +253,38 @@ def is_c_primitive_type(type_kind: CTypeKind) -> bool:
     # TypeKind.DOUBLE,
     # TypeKind.LONGDOUBLE,
     return CTypeKind.BOOL.value <= type_kind.value <= CTypeKind.LONGDOUBLE.value  # type: ignore
+
+
+def c_use_global_variable(code: str) -> bool:
+    """Checks if a C function uses global variables
+
+    Args:
+        code (str): source code of the function
+
+    Returns:
+        bool: True if the function uses global variables, False otherwise
+    """
+    index = clang.cindex.Index.create()
+    unsaved_files = [("source.c", code)]
+    tu = index.parse("source.c", unsaved_files=unsaved_files)
+
+    # decision logic:
+    # if a identifier is not a parameter and not declared in the function, it is a global variable
+    parameters = [param.spelling for param in tu.cursor.get_arguments()]
+    declared_variables = []
+
+    prev_token = None
+    for token in tu.cursor.get_tokens():
+        # check for new variable declaration
+        if token.kind == CTokenKind.IDENTIFIER:  # type: ignore
+            var_name = token.spelling
+            if (
+                prev_token
+                and prev_token.kind == CTokenKind.KEYWORD  # type: ignore
+                and prev_token.spelling != "return"
+            ):
+                declared_variables.append(var_name)
+            elif var_name not in parameters and var_name not in declared_variables:
+                return True
+        prev_token = token
+    return False

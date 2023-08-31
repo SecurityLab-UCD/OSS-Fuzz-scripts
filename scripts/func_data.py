@@ -1,7 +1,7 @@
 import json
 from enum import IntEnum
 from typing import Optional
-from scripts.source_code import c_get_params, is_c_primitive_type
+from scripts.source_code import c_get_params, c_use_global_variable, is_c_primitive_type
 
 
 class SourceCodeStatus(IntEnum):
@@ -72,6 +72,7 @@ class FunctionData:
             )
             if self.param_list is not None
             else None,
+            "use_global": c_use_global_variable(self.code) if self.code else None,
         }
 
 
