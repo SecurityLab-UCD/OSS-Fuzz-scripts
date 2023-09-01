@@ -26,9 +26,14 @@ class Project:
         self.config = config
 
     def build(self):
-        os.system(
-            f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer none --clean"
-        )
+        if self.config["language"] == "python":
+            os.system(
+                f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer coverage --clean"
+            )
+        else:
+            os.system(
+                f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer none --clean"
+            )
         self._update_targets()
 
     def mkdir_if_doesnt_exist(self):

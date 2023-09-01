@@ -18,13 +18,16 @@ class ProjectPython(Project):
 
     def build_w_pass(self, build_script: str = "build_w_pass.sh"):
         dockerfile = f"{OSSFUZZ}/projects/{self.project}/Dockerfile"
-        os.system(f"cp {dockerfile} {dockerfile}.bak")
         decorate_fuzzers_config = ["RUN pip3 install python-io-capture"] + [
             f"COPY decorated_{fuzzer} $SRC/{fuzzer}" for fuzzer in self.fuzzers
         ]
 
-        with open(dockerfile, "a") as f:
-            f.write("\n".join(decorate_fuzzers_config))
+        # Only create new Dockerfile if haven't already
+        if not os.path.exists(f"{dockerfile}.bak"):
+            os.system(f"cp {dockerfile} {dockerfile}.bak")
+            with open(dockerfile, "a") as f:
+                f.write("\n".join(decorate_fuzzers_config))
+                f.write("\n")
 
         # backup previous built fuzzers
         build_dir = f"{OSSFUZZ}/build/out/{self.project}"
@@ -38,15 +41,15 @@ class ProjectPython(Project):
     def auto_build_w_pass(self, cpp: str):
         def transform(code: str, module: str) -> str:
             to_be_inserted = (
-                "from py_io_capture import decorate_module, dump_records, DUMP_FILE_NAME"
-                "import atexit"
-                f"{module} = decorate_module({module})"
-                "atexit.register(dump_records, DUMP_FILE_NAME)"
+                "from py_io_capture import decorate_module, dump_records, DUMP_FILE_NAME\n"
+                "import atexit\n"
+                f"{module} = decorate_module({module})\n"
+                "atexit.register(dump_records, DUMP_FILE_NAME)\n"
             )
             lines = code.split("\n")
             for i, line in enumerate(lines):
                 if "TestOneInput" in line:
-                    lines.insert(i + 1, to_be_inserted)
+                    lines.insert(i - 1, to_be_inserted)
                     break
             return "\n".join(lines)
 
@@ -62,10 +65,18 @@ class ProjectPython(Project):
                 warning(f"Couldn't find target module for {fuzzer_path}")
                 continue
 
-            with open(f"decorated_{fuzzer}", "w") as f:
+            with open(f"{self.project_oss_dir}/decorated_{fuzzer}", "w") as f:
                 f.write(transform(code, target_module))
 
         self.build_w_pass()
+        
+        # Remove decorated_{fuzzer} files
+        for fuzzer in self.fuzzers:
+            fuzzer_path = f"{self.project_oss_dir}/{fuzzer}"
+            if not path.isfile(fuzzer_path):
+                warning(f"{fuzzer_path} not found")
+                continue
+            os.system(f"rm {self.project_oss_dir}/decorated_{fuzzer}")
 
     def get_target_module(self, code: str) -> Optional[str]:
         """Get the **most likely** fuzz target module name based on text similarity
