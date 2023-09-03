@@ -16,6 +16,12 @@ class ProjectPython(Project):
             f for f in os.listdir(self.project_oss_dir) if f.endswith(".py")
         ]
 
+    def build(self):
+        os.system(
+            f"python3 {OSSFUZZ}/infra/helper.py build_fuzzers {self.project} --sanitizer coverage --clean"
+        )
+        self._update_targets()
+
     def build_w_pass(self, build_script: str = "build_w_pass.sh"):
         dockerfile = f"{OSSFUZZ}/projects/{self.project}/Dockerfile"
         decorate_fuzzers_config = ["RUN pip3 install python-io-capture"] + [
