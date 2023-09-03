@@ -3,7 +3,6 @@ AFLplusplus
 FFmpeg
 qemu
 tmp
-O*
 list.txt
 output*
 **/__pycache__/*
@@ -32,3 +31,5 @@ slow-unit-*
 
 *.ipynb
 *.csv
+*.json
+*.jsonl

@@ -10,6 +10,7 @@ from typing import Optional
 
 from scripts.common import *
 from scripts.source_code import *
+from scripts.func_data import SourceCodeStatus, FunctionData, FunctionDataJSONEncoder
 
 
 # Get all files from docker
@@ -31,8 +32,8 @@ def copy_files_from_docker(proj_name: str, output_path: str) -> bool:
     image = client.images.get(f"gcr.io/oss-fuzz/{proj_name}:latest")
     container = client.containers.run(image, detach=True)
     try:
-        stream, _ = container.get_archive("/src")
-    except docker.errors.NotFound:
+        stream, _ = container.get_archive("/src")  # type: ignore
+    except docker.errors.NotFound:  # type: ignore
         error(f"Docker  {proj_name} path /src  NOT found\n")
         return False
 
@@ -45,8 +46,8 @@ def copy_files_from_docker(proj_name: str, output_path: str) -> bool:
     with tarfile.open(fileobj=fileobj) as tar:
         tar.extractall(output_path)
 
-    container.stop()
-    container.remove()
+    container.stop()  # type: ignore
+    container.remove()  # type: ignore
     return True
 
 
@@ -61,7 +62,7 @@ def get_source_code_path(suffix_file_path: str, output_path: str) -> Optional[st
     Returns:
         str: target source code file path.
     """
-    # Transliteration special characterss, replace special characters with \ ahead of themselves
+    # Transliteration special characters, replace special characters with \ ahead of themselves
     pattern = r"[\[\].,{}()\W_]"
     suffix_file_path = re.sub(pattern, r"\\\g<0>", suffix_file_path)
 
@@ -74,6 +75,40 @@ def get_source_code_path(suffix_file_path: str, output_path: str) -> Optional[st
             if regex.match(file_path):
                 return file_path
     return None
+
+
+def get_source_error_status(
+    mangled_func_name: str, proj_language: str
+) -> Optional[int]:
+    """
+    Get source code error status
+
+    Args:
+        mangled_func_name (str): Mangled function name.
+        proj_language (str): The language of the project.
+
+    Returns:
+        int: source code error status.
+    """
+    status = None
+    match proj_language:
+        # C++ file extensions
+        case "cpp" | "cxx" | "cc":
+            try:
+                # Check to see if template function, otherwise cannot find source code
+                demangled_func_name = cpp_demangle.demangle(mangled_func_name)
+                if "<" in demangled_func_name and ">" in demangled_func_name:
+                    status = SourceCodeStatus.TEMPLATE
+                else:
+                    status = SourceCodeStatus.NOT_FOUND
+            except ValueError:
+                # Either source code cannot be found or template function, can't tell without demangling
+                status = SourceCodeStatus.DEMANGLE_ERROR
+        case "c" | "python":
+            status = SourceCodeStatus.NOT_FOUND
+        case _:
+            error(f"Unsupported language: {proj_language}")
+    return status
 
 
 def main(proj_name: str, proj_language: str = "c"):
@@ -106,16 +141,17 @@ def main(proj_name: str, proj_language: str = "c"):
                 splited_file_func_name[0],
                 splited_file_func_name[1],
             )
+            curr_func_data = FunctionData(
+                file_func_name, data=data[cnt][file_func_name]
+            )
+            data[cnt] = []
 
             # Get code path from local
             code_path = get_source_code_path(file_path, output_path)
             if code_path == None:
                 warning(f"Get source code path error {file_path}")
-                data[cnt][file_func_name] = {
-                    "code": None,
-                    "status": SourceCodeStatus.PATH_ERROR,
-                    "data": data[cnt][file_func_name],
-                }
+                curr_func_data.status = SourceCodeStatus.PATH_ERROR
+                data[cnt].append(curr_func_data)
                 continue
 
             # Get function content
@@ -130,55 +166,26 @@ def main(proj_name: str, proj_language: str = "c"):
                 # Get file extension for language of source code (since some C++ projects have some C source code)
                 filename_regex = ".+\.([A-Za-z]+)"
                 match = re.match(filename_regex, file_path)
-                proj_language = match.group(1)
+                if match is not None:
+                    proj_language = match.group(1)
 
-            func_content = CODE_EXTRACTOR[proj_language](code_path, mangle_func_name)
+            curr_func_data.code = CODE_EXTRACTOR[proj_language](
+                code_path, mangle_func_name
+            )
             # Check func_content
-            if func_content == None:
-                # C++ file extensions
-                if proj_language in ("cpp", "cxx", "cc"):
-                    try:
-                        # Check to see if template function, otherwise cannot find source code
-                        demangled_func_name = cpp_demangle.demangle(mangle_func_name)
-                        if "<" in demangled_func_name and ">" in demangled_func_name:
-                            data[cnt][file_func_name] = {
-                                "code": func_content,
-                                "status": SourceCodeStatus.TEMPLATE,
-                                "data": data[cnt][file_func_name],
-                            }
-                        else:
-                            data[cnt][file_func_name] = {
-                                "code": func_content,
-                                "status": SourceCodeStatus.NOT_FOUND,
-                                "data": data[cnt][file_func_name],
-                            }
-                    except ValueError:
-                        # Either source code cannot be found or template function, can't tell without demangling
-                        data[cnt][file_func_name] = {
-                            "code": func_content,
-                            "status": SourceCodeStatus.DEMANGLE_ERROR,
-                            "data": data[cnt][file_func_name],
-                        }
-                elif proj_language == "c" or proj_language == "python":
-                    data[cnt][file_func_name] = {
-                        "code": func_content,
-                        "status": SourceCodeStatus.NOT_FOUND,
-                        "data": data[cnt][file_func_name],
-                    }
-            else:
-                # Ready to write to json
-                data[cnt][file_func_name] = {
-                    "code": func_content,
-                    "status": SourceCodeStatus.SUCCESS,
-                    "data": data[cnt][file_func_name],
-                }
+            curr_func_data.status = (
+                get_source_error_status(mangle_func_name, proj_language)
+                if curr_func_data.code is None
+                else SourceCodeStatus.SUCCESS
+            )
             # Change proj_language back to original
             proj_language = temp_proj_language
+
+            data[cnt].append(curr_func_data)
 
         # Write back to JSON
         with open(
             os.path.join(OSSFUZZ_SCRIPTS_HOME, "output", proj_name, json_file_name), "w"
         ) as json_file:
             # Write to JSON file
-            json.dump(data, json_file)
-
+            json.dump(data, json_file, cls=FunctionDataJSONEncoder)
