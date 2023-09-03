@@ -7,3 +7,4 @@ cpp_demangle>=0.1.2
 astunparse>=1.6.3
 clang==14
 pathos>=0.2.8
+fuzzywuzzy>=0.18.0

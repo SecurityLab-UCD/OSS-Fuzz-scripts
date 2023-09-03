@@ -3,7 +3,7 @@ import inspect
 import importlib.util
 import ast
 import astunparse
-from typing import Any, Optional, Callable
+from typing import Any, List, Optional, Callable
 
 from scripts.common import LLVM, LIBCLANG
 
@@ -73,20 +73,20 @@ class InclassFunctionFinder(ast.NodeVisitor):
     Visit AST to get in-class function from a Python file
     """
 
-    def __init__(self, class_name: str = None, function_name: str = None):
+    def __init__(self, class_name: str | None = None, function_name: str | None = None):
         self.class_name = class_name
         self.function_name = function_name
         self.functions = {}
 
     def visit_ClassDef(self, node: ast.AST):
         # Check class name
-        if node.name == self.class_name:
-            for body_node in node.body:
+        if node.name == self.class_name:  # type: ignore
+            for body_node in node.body:  # type: ignore
                 if (
                     isinstance(body_node, ast.FunctionDef)
                     and body_node.name == self.function_name
                 ):
-                    self.functions[node.name] = astunparse.unparse(body_node)
+                    self.functions[node.name] = astunparse.unparse(body_node)  # type: ignore
                     break
         # Ensure traversal continues to the children of nodes that don't match the current mode.
         self.generic_visit(node)
@@ -103,12 +103,12 @@ class FunctionFinder(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.AST):
         # If this is the function we're looking for then save it
-        if node.name == self.function_name or node.name in self.functions:
-            self.functions[node.name] = astunparse.unparse(node)
+        if node.name == self.function_name or node.name in self.functions:  # type: ignore
+            self.functions[node.name] = astunparse.unparse(node)  # type: ignore
 
 
 def py_get_func_code_demangled(
-    file_path: str, function_name: str, class_name: str = None
+    file_path: str, function_name: str, class_name: str | None = None
 ) -> Optional[str]:
     """Extracts the source code of a function from a Python file.
 
@@ -158,3 +158,28 @@ CODE_EXTRACTOR = {
     "python": py_get_func_code_demangled,
 }
 
+
+def py_get_imported_modules(code: str) -> List[str]:
+    """given python source code, return all imported modules' name
+
+    Args:
+        code (str): python source code
+
+    Returns:
+        List[str]: all imported modules's name in the source code
+    """
+    module_names = []
+    tree = ast.parse(code)
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                module_names.append(alias.asname if alias.asname else alias.name)
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                for alias in node.names:
+                    module_names.append(alias.name)
+            else:
+                for alias in node.names:
+                    module_names.append(alias.name.split(".")[0])
+    return module_names
