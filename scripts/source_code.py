@@ -160,10 +160,6 @@ CODE_EXTRACTOR = {
     "python": py_get_func_code_demangled,
 }
 
-####################################################################################################
-# *  "Purity" check for C/C++ functions
-####################################################################################################
-
 
 def py_get_imported_modules(code: str) -> List[str]:
     """given python source code, return all imported modules' name
@@ -189,6 +185,11 @@ def py_get_imported_modules(code: str) -> List[str]:
                 for alias in node.names:
                     module_names.append(alias.name.split(".")[0])
     return module_names
+
+
+####################################################################################################
+# *  "Purity" check for C/C++ functions
+####################################################################################################
 
 
 def c_get_params(code: str) -> Optional[list[tuple[CTypeKind, str]]]:
