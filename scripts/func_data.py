@@ -1,5 +1,7 @@
 import json
 from enum import IntEnum
+from typing import Optional
+from scripts.source_code import c_get_params, c_use_global_variable, is_c_primitive_type
 
 
 class SourceCodeStatus(IntEnum):
@@ -17,6 +19,7 @@ class FunctionData:
         self.code = code
         self.status = status
         self.data = data
+        self.param_list = c_get_params(code) if code is not None else None
 
     @staticmethod
     def stringify_one_iopair(
@@ -64,6 +67,12 @@ class FunctionData:
             ]
             if self.data is not None
             else None,
+            "only_primitive_parameter": all(
+                map(lambda x: is_c_primitive_type(x[0]), self.param_list)
+            )
+            if self.param_list is not None
+            else None,
+            "use_global": c_use_global_variable(self.code) if self.code else None,
         }
 
 

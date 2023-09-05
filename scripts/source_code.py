@@ -1,4 +1,6 @@
 import clang.cindex
+from clang.cindex import TypeKind as CTypeKind, TokenKind as CTokenKind
+import clang.enumerations
 import inspect
 import importlib.util
 import ast
@@ -183,3 +185,107 @@ def py_get_imported_modules(code: str) -> List[str]:
                 for alias in node.names:
                     module_names.append(alias.name.split(".")[0])
     return module_names
+
+
+####################################################################################################
+# *  "Purity" check for C/C++ functions
+####################################################################################################
+
+
+def c_get_params(code: str) -> Optional[list[tuple[CTypeKind, str]]]:
+    """get parameters of a C function
+
+    Args:
+        code (str): source code of the function
+
+    Returns:
+        Optional[list[tuple[CTypeKind, str]]]:
+            list of (type, name) parameter pairs, None if `code` is not a function
+    """
+
+    def walk_tree_for_params(node):
+        if node.kind == clang.cindex.CursorKind.FUNCTION_DECL:  # type: ignore
+            parameters = [
+                (param.type.kind, param.spelling) for param in node.get_arguments()
+            ]
+            return parameters
+
+        for child in node.get_children():
+            result = walk_tree_for_params(child)
+            if result is not None:
+                return result
+
+        return None
+
+    index = clang.cindex.Index.create()
+    unsaved_files = [("source.c", code)]
+    tu = index.parse("source.c", unsaved_files=unsaved_files)
+
+    return walk_tree_for_params(tu.cursor)
+
+
+def is_c_primitive_type(type_kind: CTypeKind) -> bool:
+    """Checks if a type is a C primitive type
+
+    Args:
+        type_kind (CTypeKind): a clang TypeKind object
+
+    Returns:
+        bool: True if the type is a C primitive type, False otherwise
+    """
+    # these function covers
+    # TypeKind.BOOL,
+    # TypeKind.CHAR_U,
+    # TypeKind.UCHAR,
+    # TypeKind.CHAR16,
+    # TypeKind.CHAR32,
+    # TypeKind.USHORT,
+    # TypeKind.UINT,
+    # TypeKind.ULONG,
+    # TypeKind.ULONGLONG,
+    # TypeKind.CHAR_S,
+    # TypeKind.SCHAR,
+    # TypeKind.WCHAR,
+    # TypeKind.SHORT,
+    # TypeKind.INT,
+    # TypeKind.LONG,
+    # TypeKind.LONGLONG,
+    # TypeKind.FLOAT,
+    # TypeKind.DOUBLE,
+    # TypeKind.LONGDOUBLE,
+    return CTypeKind.BOOL.value <= type_kind.value <= CTypeKind.LONGDOUBLE.value  # type: ignore
+
+
+def c_use_global_variable(code: str) -> bool:
+    """Checks if a C function uses global variables
+
+    Args:
+        code (str): source code of the function
+
+    Returns:
+        bool: True if the function uses global variables, False otherwise
+    """
+    index = clang.cindex.Index.create()
+    unsaved_files = [("source.c", code)]
+    tu = index.parse("source.c", unsaved_files=unsaved_files)
+
+    # decision logic:
+    # if a identifier is not a parameter and not declared in the function, it is a global variable
+    parameters = [param.spelling for param in tu.cursor.get_arguments()]
+    declared_variables = []
+
+    prev_token = None
+    for token in tu.cursor.get_tokens():
+        # check for new variable declaration
+        if token.kind == CTokenKind.IDENTIFIER:  # type: ignore
+            var_name = token.spelling
+            if (
+                prev_token
+                and prev_token.kind == CTokenKind.KEYWORD  # type: ignore
+                and prev_token.spelling != "return"
+            ):
+                declared_variables.append(var_name)
+            elif var_name not in parameters and var_name not in declared_variables:
+                return True
+        prev_token = token
+    return False
