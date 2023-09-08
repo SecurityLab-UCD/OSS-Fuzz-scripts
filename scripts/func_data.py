@@ -2,6 +2,7 @@ import json
 from enum import IntEnum
 from typing import Optional
 from scripts.source_code import c_get_params, c_use_global_variable, is_c_primitive_type
+from scripts.unittest_gen import UNITTEST_GENERATOR
 
 
 class SourceCodeStatus(IntEnum):
@@ -73,7 +74,17 @@ class FunctionData:
             if self.param_list is not None
             else None,
             "use_global": c_use_global_variable(self.code) if self.code else None,
+            "unittest": self.to_unittest(),
         }
+
+    def to_unittest(self) -> str:
+        """Generate unittest for this function
+
+        Returns:
+            str: unittest code for this function from fuzz io pairs
+        """
+        _, func_name = self.file_func_name.split("?")
+        return UNITTEST_GENERATOR["cpp"](func_name, self.data)
 
 
 class FunctionDataJSONEncoder(json.JSONEncoder):
