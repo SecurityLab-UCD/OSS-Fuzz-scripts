@@ -11,7 +11,7 @@ def to_cpp_GoogleTest(func_name: str, io_pairs: list[list[str]]) -> str:
         real = f"{func_name}({', '.join(inputs)})"
         for outputs in outputss:
             expected = ", ".join(outputs)
-            lines.append(f"  EXPECTED_EQ({real}, {expected})")
+            lines.append(f"  EXPECTED_EQ({real}, {expected});")
     lines.append("}")
     return "\n".join(lines)
 
