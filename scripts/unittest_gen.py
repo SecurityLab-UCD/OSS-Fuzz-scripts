@@ -3,7 +3,7 @@ def to_cpp_GoogleTest(func_name: str, io_pairs: list[list[str]]) -> str:
     testcase_name = func_name.upper() + "_TEST"
     test_name = func_name.upper()
 
-    # todo: inlcude dependency libraries
+    # todo: include dependency libraries
     lines.append("#include <gtest/gtest.h>")
     lines.append("TEST(" + testcase_name + ", " + test_name + ") {")
 
@@ -12,7 +12,8 @@ def to_cpp_GoogleTest(func_name: str, io_pairs: list[list[str]]) -> str:
         outputss = io[1]
         real = f"{func_name}({', '.join(inputs)})"
         for outputs in outputss:
-            expected = ", ".join(outputs)
+            # idx 0 is the actual rnt value, the rest are pointer inputs
+            expected = outputs[0]
             lines.append(f"  EXPECTED_EQ({real}, {expected});")
     lines.append("}")
     return "\n".join(lines)
