@@ -3,6 +3,8 @@ def to_cpp_GoogleTest(func_name: str, io_pairs: list[list[str]]) -> str:
     testcase_name = func_name.upper() + "_TEST"
     test_name = func_name.upper()
 
+    # todo: inlcude dependency libraries
+    lines.append("#include <gtest/gtest.h>")
     lines.append("TEST(" + testcase_name + ", " + test_name + ") {")
 
     for io in io_pairs:

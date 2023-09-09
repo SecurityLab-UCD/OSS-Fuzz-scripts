@@ -62,7 +62,10 @@ def main(args):
             "data": [
                 "1<SEP>2#3;4",
                 "2<SEP>3#5;6"
-            ]
+            ],
+            "only_primitive_parameter": false,
+            "use_global": false,
+            "unittest": "..."
         },
     ]
     """

@@ -6,7 +6,10 @@
         "data": [
             "15648#2077<SEP>1610628384;2077<SEP>1610628384;2077<SEP>1610628384",
             "292#2305<SEP>1610613028"
-        ]
+        ],
+        "only_primitive_parameter": false,
+        "use_global": true,
+        "unittest": "#include <gtest/gtest.h>\nTEST(STUN_GET_METHOD_STR_TEST, STUN_GET_METHOD_STR) {\n  EXPECTED_EQ(stun_get_method_str(15648), 2077, 1610628384);\n  EXPECTED_EQ(stun_get_method_str(15648), 2077, 1610628384);\n  EXPECTED_EQ(stun_get_method_str(15648), 2077, 1610628384);\n  EXPECTED_EQ(stun_get_method_str(292), 2305, 1610613028);\n}"
     },
     {
         "file_func_name": "/src/coturn/src/client/ns_turn_msg.c?stun_attr_get_value",
@@ -15,6 +18,9 @@
         "data": [
             "5120#-1711959765<SEP>335546368;1318421155<SEP>335546368;212331162<SEP>335546368;1696887030<SEP>335546368;1696887030<SEP>335546368;1696887030<SEP>335546368;-1711959765<SEP>335546368;-1711959765<SEP>335546368;212331162<SEP>335546368;212331162<SEP>335546368",
             "1024#-1773371968<SEP>67119232;1275853768<SEP>67119232;-818185499<SEP>67119232;-1773371968<SEP>67119232;-1773371968<SEP>67119232;-1773371968<SEP>67119232;-1773371968<SEP>67119232;-1773371968<SEP>67119232;-818185499<SEP>67119232;-1773371968<SEP>67119232"
-        ]
+        ],
+        "only_primitive_parameter": true,
+        "use_global": true,
+        "unittest": "#include <gtest/gtest.h>\nTEST(STUN_ATTR_GET_VALUE_TEST, STUN_ATTR_GET_VALUE) {\n  EXPECTED_EQ(stun_attr_get_value(5120), -1711959765, 335546368);\n  EXPECTED_EQ(stun_attr_get_value(5120), 1318421155, 335546368);\n  EXPECTED_EQ(stun_attr_get_value(5120), 212331162, 335546368);\n  EXPECTED_EQ(stun_attr_get_value(5120), 1696887030, 335546368);\n  EXPECTED_EQ(stun_attr_get_value(5120), 1696887030, 335546368);\n  EXPECTED_EQ(stun_attr_get_value(5120), 1696887030, 335546368);\n  EXPECTED_EQ(stun_attr_get_value(5120), -1711959765, 335546368);\n  EXPECTED_EQ(stun_attr_get_value(5120), -1711959765, 335546368);\n  EXPECTED_EQ(stun_attr_get_value(5120), 212331162, 335546368);\n  EXPECTED_EQ(stun_attr_get_value(5120), 212331162, 335546368);\n  EXPECTED_EQ(stun_attr_get_value(1024), -1773371968, 67119232);\n  EXPECTED_EQ(stun_attr_get_value(1024), 1275853768, 67119232);\n  EXPECTED_EQ(stun_attr_get_value(1024), -818185499, 67119232);\n  EXPECTED_EQ(stun_attr_get_value(1024), -1773371968, 67119232);\n  EXPECTED_EQ(stun_attr_get_value(1024), -1773371968, 67119232);\n  EXPECTED_EQ(stun_attr_get_value(1024), -1773371968, 67119232);\n  EXPECTED_EQ(stun_attr_get_value(1024), -1773371968, 67119232);\n  EXPECTED_EQ(stun_attr_get_value(1024), -1773371968, 67119232);\n  EXPECTED_EQ(stun_attr_get_value(1024), -818185499, 67119232);\n  EXPECTED_EQ(stun_attr_get_value(1024), -1773371968, 67119232);\n}"
     }
 ]
