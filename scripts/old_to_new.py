@@ -63,7 +63,7 @@ def main(args):
                 "1<SEP>2#3;4",
                 "2<SEP>3#5;6"
             ],
-            "only_primitive_parameter": false,
+            "only_primitive_parameter": true,
             "use_global": false,
             "unittest": "..."
         },
