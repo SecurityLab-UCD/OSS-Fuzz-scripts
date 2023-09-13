@@ -13,7 +13,9 @@ class ProjectPython(Project):
     def __init__(self, project: str, fuzzdir: str, dumpdir: str, config: dict):
         super().__init__(project, fuzzdir, dumpdir, config)
         self.fuzzers = [
-            f for f in os.listdir(self.project_oss_dir) if f.endswith(".py")
+            f
+            for f in os.listdir(self.project_oss_dir)
+            if f.endswith(".py") and f.startswith("fuzz_")
         ]
 
     def build(self):
