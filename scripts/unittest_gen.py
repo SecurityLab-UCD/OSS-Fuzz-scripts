@@ -15,7 +15,7 @@ def to_cpp_GoogleTest(func_name: str, io_pairs: list[list[str]]) -> str:
             if len(outputs) > 0:
                 # idx 0 is the actual rnt value, the rest are pointer inputs
                 expected = outputs[0]
-                lines.append(f"  EXPECTED_EQ({real}, {expected});")
+                lines.append(f"  ASSERT_EQ({real}, {expected});")
             else:
                 # no return, then the expect return is void
                 # ASSERT_TRUE((std::is_same<decltype(MyFunction()), void>::value));
