@@ -11,16 +11,21 @@ def to_cpp_GoogleTest(func_name: str, io_pairs: list[list[str]]) -> str:
         inputs = io[0]
         outputss = io[1]
         real = f"{func_name}({', '.join(inputs)})"
-        for outputs in outputss:
-            if len(outputs) > 0:
-                # idx 0 is the actual rnt value, the rest are pointer inputs
-                expected = outputs[0]
-                lines.append(f"  ASSERT_EQ({real}, {expected});")
-            else:
-                # no return, then the expect return is void
-                # ASSERT_TRUE((std::is_same<decltype(MyFunction()), void>::value));
-                # https://stackoverflow.com/questions/69036412/assert-with-googletest-that-a-function-does-not-return-a-value-void
-                continue
+
+        # idx 0 is the actual rnt value, the rest are pointer inputs
+        expected_outputs = [outputs[0] for outputs in outputss if len(outputs) > 0]
+        # todo: no return, then the expect return is void
+        # ASSERT_TRUE((std::is_same<decltype(MyFunction()), void>::value));
+        # https://stackoverflow.com/questions/69036412/assert-with-googletest-that-a-function-does-not-return-a-value-void
+
+        if all(expected_outputs[0] == output for output in expected_outputs):
+            # all expected outputs are the same
+            expected = expected_outputs[0]
+            lines.append(f"  ASSERT_EQ({real}, {expected});")
+        else:
+            # todo: decide how to handle different expected outputs
+            pass
+
     lines.append("}")
     return "\n".join(lines)
 
