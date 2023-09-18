@@ -13,7 +13,9 @@ class ProjectPython(Project):
     def __init__(self, project: str, fuzzdir: str, dumpdir: str, config: dict):
         super().__init__(project, fuzzdir, dumpdir, config)
         self.fuzzers = [
-            f for f in os.listdir(self.project_oss_dir) if f.endswith(".py")
+            f
+            for f in os.listdir(self.project_oss_dir)
+            if f.endswith(".py") and f.startswith("fuzz_")
         ]
 
     def build(self):
@@ -24,9 +26,9 @@ class ProjectPython(Project):
 
     def build_w_pass(self, build_script: str = "build_w_pass.sh"):
         dockerfile = f"{OSSFUZZ}/projects/{self.project}/Dockerfile"
-        decorate_fuzzers_config = ["RUN pip3 install python-io-capture"] + [
-            f"COPY decorated_{fuzzer} $SRC/{fuzzer}" for fuzzer in self.fuzzers
-        ]
+        decorate_fuzzers_config = [
+            "RUN pip3 install git+https://github.com/SecurityLab-UCD/python-io-capture.git"
+        ] + [f"COPY decorated_{fuzzer} $SRC/{fuzzer}" for fuzzer in self.fuzzers]
 
         # Only create new Dockerfile if haven't already
         if not os.path.exists(f"{dockerfile}.bak"):
@@ -75,7 +77,7 @@ class ProjectPython(Project):
                 f.write(transform(code, target_module))
 
         self.build_w_pass()
-        
+
         # Remove decorated_{fuzzer} files
         for fuzzer in self.fuzzers:
             fuzzer_path = f"{self.project_oss_dir}/{fuzzer}"
