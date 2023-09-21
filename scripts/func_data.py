@@ -21,7 +21,12 @@ class SourceCodeStatus(IntEnum):
 
 class FunctionData:
     def __init__(
-        self, file_func_name: str, language: str, code=None, status=None, data=None
+        self,
+        file_func_name: str,
+        language: str,
+        code=None,
+        status=None,
+        data=None,
     ) -> None:
         """Class that contains function data to dump to json"""
         self.file_func_name = file_func_name

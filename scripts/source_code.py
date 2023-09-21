@@ -110,9 +110,7 @@ class FunctionFinder(ast.NodeVisitor):
             self.functions[node.name] = astunparse.unparse(node)  # type: ignore
 
 
-def py_get_func_code_demangled(
-    file_path: str, function_name: str, class_name: str | None = None
-) -> Optional[str]:
+def py_get_func_code_demangled(file_path: str, name: str) -> Optional[str]:
     """Extracts the source code of a function from a Python file.
 
     Args:
@@ -132,14 +130,16 @@ def py_get_func_code_demangled(
     tree = ast.parse(source_code)
 
     # Check the function is defined in class or not
-    if class_name == None:
-        visitor = FunctionFinder(function_name)
-        visitor.visit(tree)
-    else:
-        visitor = InclassFunctionFinder(class_name, function_name)
-        visitor.visit(tree)
-    # get the result
+    match name.split("."):
+        case [function_name]:
+            visitor = FunctionFinder(function_name)
+        case [class_name, function_name]:
+            visitor = InclassFunctionFinder(class_name, function_name)
+        case _:
+            visitor = FunctionFinder(name)
 
+    visitor.visit(tree)
+    # get the result
     function_source_code = "".join(
         function_code
         for function_code in visitor.functions.values()
@@ -160,6 +160,35 @@ CODE_EXTRACTOR = {
     "cxx": clang_get_func_code_mangled,
     "python": py_get_func_code_demangled,
 }
+
+
+def py_get_class_code(file_path, class_name):
+    with open(file_path, "r") as file:
+        source_code = file.read()
+
+    # Parse the source code into an AST
+    tree = ast.parse(source_code)
+
+    # Find the class definition node
+    class_node = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef) and node.name == class_name:
+            class_node = node
+            break
+
+    if class_node is None:
+        return None
+
+    # Get the source code of the class
+    start_line = class_node.lineno
+    end_line = class_node.body[-1].lineno
+    class_source_code = "\n".join(source_code.split("\n")[start_line - 1 : end_line])
+    # Include the last function's body if it exists
+    last_function_node = class_node.body[-1] if class_node.body else None
+    if isinstance(last_function_node, ast.FunctionDef):
+        end_line = last_function_node.body[-1].lineno
+        class_source_code += "\n" + "\n".join(source_code.split("\n")[end_line - 1 :])
+    return class_source_code
 
 
 def py_get_imported_modules(code: str) -> List[str]:
@@ -292,32 +321,67 @@ def c_use_global_variable(code: str) -> bool:
     return False
 
 
+def py_get_params(source_code: str) -> list[str]:
+    tree = ast.parse(source_code)
+
+    # Find all the function definitions in the AST
+    functions = [node for node in tree.body if isinstance(node, ast.FunctionDef)]
+
+    # Extract the parameter names from each function definition
+    parameter_names = []
+    for function in functions:
+        for arg in function.args.args:
+            parameter_names.append(arg.arg)
+
+    return parameter_names
+
+
 def py_use_global_variable(code: str, func_name: str) -> bool | None:
     """Checks if a Python function uses global variables
 
     Args:
         code (str): source code of the function
+        func_name (str): name of the function
 
     Returns:
         bool: True if the function uses global variables, False otherwise
     """
     try:
         exec(code)
-    except NameError:
-        return None
 
-    func = locals()[func_name]
-    closure_vars = inspect.getclosurevars(func)
+        func = locals()[func_name]
+        closure_vars = inspect.getclosurevars(func)
 
-    # when only checking with the function source code,
-    # globals will be identified as unbounded variables
-    # since the variable declaration is not in the input source code
-    detected_vars = [
-        closure_vars.globals,
-        closure_vars.nonlocals,
-        closure_vars.unbound,
-    ]
-    return sum(map(len, detected_vars)) > 0
+        # when only checking with the function source code,
+        # globals will be identified as unbounded variables
+        # since the variable declaration is not in the input source code
+        detected_vars = [
+            closure_vars.globals,
+            closure_vars.nonlocals,
+            closure_vars.unbound,
+        ]
+        return sum(map(len, detected_vars)) > 0
+    except:
+        # backup plan if exec() + locals() fails
+        params = py_get_params(code)
+        tree = ast.parse(code)
+
+        # for token in tree
+        tree = ast.parse(code)
+        global_vars = []
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Global):
+                global_vars.extend(node.names)
+
+            if (
+                isinstance(node, ast.Name)
+                and isinstance(node.ctx, ast.Store)
+                and node.id not in params
+            ):
+                global_vars.append(node.id)
+
+        return bool(global_vars)
 
 
 def is_py_primitive_type(value: str) -> bool:

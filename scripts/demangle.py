@@ -148,7 +148,7 @@ def main(proj_name: str, proj_language: str = "c"):
 
             # Get code path from local
             code_path = get_source_code_path(file_path, output_path)
-            if code_path == None:
+            if code_path is None:
                 warning(f"Get source code path error {file_path}")
                 curr_func_data.status = SourceCodeStatus.PATH_ERROR
                 data[cnt].append(curr_func_data)

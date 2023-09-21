@@ -1,7 +1,11 @@
 # type: ignore
 
 import unittest
-from scripts.source_code import py_use_global_variable, is_py_primitive_type
+from scripts.source_code import (
+    py_use_global_variable,
+    is_py_primitive_type,
+    py_get_params,
+)
 import logging
 
 
@@ -16,6 +20,15 @@ class TestGetParamsPy(unittest.TestCase):
         code = "def add(x, y):\n    return x + y"
         self.assertFalse(py_use_global_variable(code, "add"))
 
+        code = "def add(x, y):\n    z = x + y\n    return z"
+        self.assertFalse(py_use_global_variable(code, "add"))
+
+        code = "def foo(x, y):\n    z = 1\n    return z"
+        self.assertFalse(py_use_global_variable(code, "foo"))
+
+        code = "def boo(x, y):\n    z = x\n    return z"
+        self.assertFalse(py_use_global_variable(code, "boo"))
+
     def test_py_primitive(self):
         value = "1"
         self.assertTrue(is_py_primitive_type(value))
@@ -28,6 +41,16 @@ class TestGetParamsPy(unittest.TestCase):
 
         value = "<chardet.universaldetector.UniversalDetector object at 0x7fe01f73ac10>"
         self.assertFalse(is_py_primitive_type(value))
+
+    def test_py_get_param(self):
+        code = "def addX(y):\n    z = x + y\n    return z"
+        self.assertEqual(py_get_params(code), ["y"])
+
+        code = "def add(x, y):\n    return x + y"
+        self.assertEqual(py_get_params(code), ["x", "y"])
+
+        code = "def add(x: int, y: int):\n    return x + y"
+        self.assertEqual(py_get_params(code), ["x", "y"])
 
 
 if __name__ == "__main__":
