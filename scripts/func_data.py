@@ -1,7 +1,12 @@
 import json
 from enum import IntEnum
 from typing import Optional
-from scripts.source_code import c_get_params, c_use_global_variable, is_c_primitive_type
+from scripts.source_code import (
+    c_get_params,
+    is_c_primitive_type,
+    c_use_global_variable,
+    py_use_global_variable,
+)
 from scripts.unittest_gen import UNITTEST_GENERATOR
 
 
@@ -14,9 +19,12 @@ class SourceCodeStatus(IntEnum):
 
 
 class FunctionData:
-    def __init__(self, file_func_name, code=None, status=None, data=None) -> None:
+    def __init__(
+        self, file_func_name: str, language: str, code=None, status=None, data=None
+    ) -> None:
         """Class that contains function data to dump to json"""
         self.file_func_name = file_func_name
+        self.language = language
         self.code = code
         self.status = status
         self.data = data
@@ -73,18 +81,33 @@ class FunctionData:
             )
             if self.param_list is not None
             else None,
-            "use_global": c_use_global_variable(self.code) if self.code else None,
+            "use_global": self.use_global(),
             "unittest": self.to_unittest(),
         }
 
-    def to_unittest(self) -> str:
+    def use_global(self) -> bool | None:
+        if self.code is None:
+            return None
+
+        match self.language:
+            case "c" | "cpp" | "cxx" | "cc":
+                return c_use_global_variable(self.code)
+            case "python":
+                func_name = self.file_func_name.split("?")[1]
+                return py_use_global_variable(self.code, func_name)
+            case _:
+                return None
+
+    def to_unittest(self) -> str | None:
         """Generate unittest for this function
 
         Returns:
             str: unittest code for this function from fuzz io pairs
         """
         _, func_name = self.file_func_name.split("?")
-        return UNITTEST_GENERATOR["cpp"](func_name, self.data)
+        if self.data is None or self.language not in UNITTEST_GENERATOR:
+            return None
+        return UNITTEST_GENERATOR[self.language](func_name, self.data)
 
 
 class FunctionDataJSONEncoder(json.JSONEncoder):

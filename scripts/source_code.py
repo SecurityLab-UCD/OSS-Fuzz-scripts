@@ -289,3 +289,27 @@ def c_use_global_variable(code: str) -> bool:
                 return True
         prev_token = token
     return False
+
+
+def py_use_global_variable(code: str, func_name: str) -> bool:
+    """Checks if a Python function uses global variables
+
+    Args:
+        code (str): source code of the function
+
+    Returns:
+        bool: True if the function uses global variables, False otherwise
+    """
+    exec(code)
+    func = locals()[func_name]
+    closure_vars = inspect.getclosurevars(func)
+
+    # when only checking with the function source code,
+    # globals will be identified as unbounded variables
+    # since the variable declaration is not in the input source code
+    detected_vars = [
+        closure_vars.globals,
+        closure_vars.nonlocals,
+        closure_vars.unbound,
+    ]
+    return sum(map(len, detected_vars)) > 0

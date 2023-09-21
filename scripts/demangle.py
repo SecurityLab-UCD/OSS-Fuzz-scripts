@@ -142,7 +142,7 @@ def main(proj_name: str, proj_language: str = "c"):
                 splited_file_func_name[1],
             )
             curr_func_data = FunctionData(
-                file_func_name, data=data[cnt][file_func_name]
+                file_func_name, proj_language, data=data[cnt][file_func_name]
             )
             data[cnt] = []
 
