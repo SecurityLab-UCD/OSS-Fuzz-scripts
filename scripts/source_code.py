@@ -292,7 +292,7 @@ def c_use_global_variable(code: str) -> bool:
     return False
 
 
-def py_use_global_variable(code: str, func_name: str) -> bool:
+def py_use_global_variable(code: str, func_name: str) -> bool | None:
     """Checks if a Python function uses global variables
 
     Args:
@@ -301,7 +301,11 @@ def py_use_global_variable(code: str, func_name: str) -> bool:
     Returns:
         bool: True if the function uses global variables, False otherwise
     """
-    exec(code)
+    try:
+        exec(code)
+    except NameError:
+        return None
+
     func = locals()[func_name]
     closure_vars = inspect.getclosurevars(func)
 
