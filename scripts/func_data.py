@@ -4,6 +4,7 @@ from typing import Optional
 from scripts.source_code import (
     c_get_params,
     is_c_primitive_type,
+    is_py_primitive_type,
     c_use_global_variable,
     py_use_global_variable,
 )
@@ -28,7 +29,6 @@ class FunctionData:
         self.code = code
         self.status = status
         self.data = data
-        self.param_list = c_get_params(code) if code is not None else None
 
     @staticmethod
     def stringify_one_iopair(
@@ -76,14 +76,36 @@ class FunctionData:
             ]
             if self.data is not None
             else None,
-            "only_primitive_parameter": all(
-                map(lambda x: is_c_primitive_type(x[0]), self.param_list)
-            )
-            if self.param_list is not None
-            else None,
+            "only_primitive_parameter": self.only_primitive_parameter(),
             "use_global": self.use_global(),
             "unittest": self.to_unittest(),
         }
+
+    def only_primitive_parameter(self) -> bool | None:
+        match self.language:
+            case "c" | "cpp" | "cxx" | "cc":
+                if self.code is None:
+                    return None
+                match c_get_params(self.code):
+                    case None:
+                        return None
+                    case param_list:
+                        return all(map(lambda x: is_c_primitive_type(x[0]), param_list))
+            case "python":
+                # if no input/output data, we consider it as void
+                if self.data is None:
+                    return True
+
+                def is_io_primitive(io: list[list[str]]) -> bool:
+                    values_to_check = io[0]  # inputs
+                    if len(io[1]) > 0:
+                        values_to_check += io[1][0]  # outputs (return value)
+                    return all(map(is_py_primitive_type, values_to_check))
+
+                return all(map(is_io_primitive, self.data))
+
+            case _:
+                return None
 
     def use_global(self) -> bool | None:
         if self.code is None:

@@ -6,6 +6,7 @@ import importlib.util
 import ast
 import astunparse
 from typing import Any, List, Optional, Callable
+import re
 
 from scripts.common import LLVM, LIBCLANG
 
@@ -313,3 +314,18 @@ def py_use_global_variable(code: str, func_name: str) -> bool:
         closure_vars.unbound,
     ]
     return sum(map(len, detected_vars)) > 0
+
+
+def is_py_primitive_type(value: str) -> bool:
+    """check if a value is a primitive type in Python.
+    We consider only a object <class_name object at 0xsome_address> as non-primitive type
+
+    Args:
+        value (str): a reported value string
+
+    Returns:
+        bool: True if the value is a primitive type, False otherwise
+    """
+    pattern = r"<([^}]*) object at 0x([0-9a-fA-F]{12})>"
+    match = re.match(pattern, value)
+    return not bool(match)
