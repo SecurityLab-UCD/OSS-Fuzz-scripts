@@ -1,4 +1,4 @@
-def to_cpp_GoogleTest(func_name: str, io_pairs: list[list[str]]) -> str:
+def to_cpp_GoogleTest(func_name: str, io_pairs: list[list[list[str]]]) -> str:
     lines = []
     testcase_name = func_name.upper() + "_TEST"
     test_name = func_name.upper()
@@ -30,7 +30,11 @@ def to_cpp_GoogleTest(func_name: str, io_pairs: list[list[str]]) -> str:
     return "\n".join(lines)
 
 
-def to_py_unittest(func_name: str, io_pairs: list[list[str]]) -> str:
+def to_py_unittest(
+    func_name: str, io_pairs: list[list[list[str]]], param_list: list[str]
+) -> str:
+    from py_io_capture import PythonReportError
+
     match func_name.split("."):
         case [function_name]:
             decl = f"def test_{func_name}():"
@@ -42,6 +46,21 @@ def to_py_unittest(func_name: str, io_pairs: list[list[str]]) -> str:
     lines = [decl]
     for io in io_pairs:
         inputs = io[0]
+        # replace optional parameters to format: param_name=optional_value
+        if PythonReportError.OPTIONAL_ARG_ABSENT in inputs:
+            start_idx = inputs.index(PythonReportError.OPTIONAL_ARG_ABSENT)
+            n_params = len(param_list)
+            # todo: in some case, reported inputs is more than param_list
+            # to reproduce: run postprocess on chardet/__init__.py?detect
+            for i in range(start_idx, n_params):
+                if inputs[i] != PythonReportError.OPTIONAL_ARG_ABSENT:
+                    inputs[i] = f"{param_list[i]}={inputs[i]}"
+            # since optional parameters are converted to keyword arguments,
+            # we can filter out all OPTIONAL_ARG_ABSENT
+            inputs = filter(
+                lambda x: x != PythonReportError.OPTIONAL_ARG_ABSENT, inputs[:n_params]
+            )
+
         outputss = io[1]
         real = f"{func_name}({', '.join(inputs)})"
 
@@ -57,12 +76,3 @@ def to_py_unittest(func_name: str, io_pairs: list[list[str]]) -> str:
             pass
 
     return "\n".join(lines)
-
-
-UNITTEST_GENERATOR = {
-    "c": to_cpp_GoogleTest,
-    "cpp": to_cpp_GoogleTest,
-    "cxx": to_cpp_GoogleTest,
-    "cc": to_cpp_GoogleTest,
-    "python": to_py_unittest,
-}

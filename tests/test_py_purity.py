@@ -51,6 +51,14 @@ class TestGetParamsPy(unittest.TestCase):
 
         code = "def add(x: int, y: int):\n    return x + y"
         self.assertEqual(py_get_params(code), ["x", "y"])
+        
+    def test_py_get_param_optional(self):
+        code = "def add(x, y=3):\n    return x + y"
+        self.assertEqual(py_get_params(code), ["x", "y"])
+
+        code = "def add(x: int=1, y: int=2):\n    return x + y"
+        self.assertEqual(py_get_params(code), ["x", "y"])
+        
 
 
 if __name__ == "__main__":

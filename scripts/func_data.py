@@ -7,8 +7,9 @@ from scripts.source_code import (
     is_py_primitive_type,
     c_use_global_variable,
     py_use_global_variable,
+    py_get_params,
 )
-from scripts.unittest_gen import UNITTEST_GENERATOR
+from scripts.unittest_gen import to_cpp_GoogleTest, to_py_unittest
 
 
 class SourceCodeStatus(IntEnum):
@@ -132,9 +133,19 @@ class FunctionData:
             str: unittest code for this function from fuzz io pairs
         """
         _, func_name = self.file_func_name.split("?")
-        if self.data is None or self.language not in UNITTEST_GENERATOR:
+        if self.data is None:
             return None
-        return UNITTEST_GENERATOR[self.language](func_name, self.data)
+
+        match self.language:
+            case "c" | "cpp" | "cxx" | "cc":
+                return to_cpp_GoogleTest(func_name, self.data)
+            case "python":
+                if self.code is None:
+                    return None
+                param_list = py_get_params(self.code)
+                return to_py_unittest(func_name, self.data, param_list)
+            case _:
+                return None
 
 
 class FunctionDataJSONEncoder(json.JSONEncoder):
