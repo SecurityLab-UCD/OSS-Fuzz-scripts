@@ -370,10 +370,11 @@ def py_use_global_variable(code: str) -> bool | None:
                         for target in node.targets[0].elts:
                             assignments.add(target.id)  # type: ignore
                     else:
+                        # todo: more extensive type matching here
                         try:
                             assignments.add(node.targets[0].id)  # type: ignore
-                        except AttributeError:
-                            assignments.add(node.targets[0].attr)  # type: ignore
+                        except:
+                            pass
                 elif isinstance(node, ast.Name):
                     if not is_imported_module(node.id, node.lineno):
                         names.add(node.id)
