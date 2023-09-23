@@ -142,13 +142,13 @@ def main(proj_name: str, proj_language: str = "c"):
                 splited_file_func_name[1],
             )
             curr_func_data = FunctionData(
-                file_func_name, data=data[cnt][file_func_name]
+                file_func_name, proj_language, data=data[cnt][file_func_name]
             )
             data[cnt] = []
 
             # Get code path from local
             code_path = get_source_code_path(file_path, output_path)
-            if code_path == None:
+            if code_path is None:
                 warning(f"Get source code path error {file_path}")
                 curr_func_data.status = SourceCodeStatus.PATH_ERROR
                 data[cnt].append(curr_func_data)

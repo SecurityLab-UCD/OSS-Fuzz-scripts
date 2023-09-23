@@ -8,3 +8,5 @@ astunparse>=1.6.3
 clang==14
 pathos>=0.2.8
 fuzzywuzzy>=0.18.0
+git+https://github.com/SecurityLab-UCD/python-io-capture.git
+StrEnum>=0.4.15

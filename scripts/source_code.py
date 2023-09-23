@@ -6,6 +6,7 @@ import importlib.util
 import ast
 import astunparse
 from typing import Any, List, Optional, Callable
+import re
 
 from scripts.common import LLVM, LIBCLANG
 
@@ -109,9 +110,7 @@ class FunctionFinder(ast.NodeVisitor):
             self.functions[node.name] = astunparse.unparse(node)  # type: ignore
 
 
-def py_get_func_code_demangled(
-    file_path: str, function_name: str, class_name: str | None = None
-) -> Optional[str]:
+def py_get_func_code_demangled(file_path: str, name: str) -> Optional[str]:
     """Extracts the source code of a function from a Python file.
 
     Args:
@@ -131,14 +130,16 @@ def py_get_func_code_demangled(
     tree = ast.parse(source_code)
 
     # Check the function is defined in class or not
-    if class_name == None:
-        visitor = FunctionFinder(function_name)
-        visitor.visit(tree)
-    else:
-        visitor = InclassFunctionFinder(class_name, function_name)
-        visitor.visit(tree)
-    # get the result
+    match name.split("."):
+        case [function_name]:
+            visitor = FunctionFinder(function_name)
+        case [class_name, function_name]:
+            visitor = InclassFunctionFinder(class_name, function_name)
+        case _:
+            visitor = FunctionFinder(name)
 
+    visitor.visit(tree)
+    # get the result
     function_source_code = "".join(
         function_code
         for function_code in visitor.functions.values()
@@ -159,6 +160,35 @@ CODE_EXTRACTOR = {
     "cxx": clang_get_func_code_mangled,
     "python": py_get_func_code_demangled,
 }
+
+
+def py_get_class_code(file_path, class_name):
+    with open(file_path, "r") as file:
+        source_code = file.read()
+
+    # Parse the source code into an AST
+    tree = ast.parse(source_code)
+
+    # Find the class definition node
+    class_node = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef) and node.name == class_name:
+            class_node = node
+            break
+
+    if class_node is None:
+        return None
+
+    # Get the source code of the class
+    start_line = class_node.lineno
+    end_line = class_node.body[-1].lineno
+    class_source_code = "\n".join(source_code.split("\n")[start_line - 1 : end_line])
+    # Include the last function's body if it exists
+    last_function_node = class_node.body[-1] if class_node.body else None
+    if isinstance(last_function_node, ast.FunctionDef):
+        end_line = last_function_node.body[-1].lineno
+        class_source_code += "\n" + "\n".join(source_code.split("\n")[end_line - 1 :])
+    return class_source_code
 
 
 def py_get_imported_modules(code: str) -> List[str]:
@@ -289,3 +319,79 @@ def c_use_global_variable(code: str) -> bool:
                 return True
         prev_token = token
     return False
+
+
+def py_get_params(source_code: str) -> list[str]:
+    tree = ast.parse(source_code)
+
+    # Find all the function definitions in the AST
+    functions = [node for node in tree.body if isinstance(node, ast.FunctionDef)]
+
+    # Extract the parameter names from each function definition
+    parameter_names = []
+    for function in functions:
+        for arg in function.args.args:
+            parameter_names.append(arg.arg)
+
+    return parameter_names
+
+
+def py_use_global_variable(code: str) -> bool | None:
+    """Checks if a Python function uses global variables
+
+    Args:
+        code (str): source code of the function
+        func_name (str): name of the function
+
+    Returns:
+        bool: True if the function uses global variables, False otherwise
+    """
+    # backup plan if exec() + locals() fails
+    params = set(py_get_params(code))
+    assignments = set()
+    names = set()
+    lines = code.split("\n")
+
+    def is_imported_module(node_name: str, lineno: int) -> bool:
+        """is it is in form of node_name.xxx, we consider it as imported module"""
+        line = lines[lineno - 1]
+        idx = line.find(node_name) + len(node_name)
+        return idx < len(line) and line[idx] == "."
+
+    tree = ast.parse(code)
+
+    for func in tree.body:
+        if isinstance(func, ast.FunctionDef):
+            # for node in func.body:
+            for node in ast.walk(func):
+                if isinstance(node, ast.Assign):
+                    if isinstance(node.targets[0], ast.Tuple):
+                        # multiple assignements, e.g. a, b = 1, 2
+                        for target in node.targets[0].elts:
+                            assignments.add(target.id)  # type: ignore
+                    else:
+                        try:
+                            assignments.add(node.targets[0].id)  # type: ignore
+                        except AttributeError:
+                            assignments.add(node.targets[0].attr)  # type: ignore
+                elif isinstance(node, ast.Name):
+                    if not is_imported_module(node.id, node.lineno):
+                        names.add(node.id)
+
+    likely_globals = names - assignments - params
+    return bool(likely_globals)
+
+
+def is_py_primitive_type(value: str) -> bool:
+    """check if a value is a primitive type in Python.
+    We consider only a object <class_name object at 0xsome_address> as non-primitive type
+
+    Args:
+        value (str): a reported value string
+
+    Returns:
+        bool: True if the value is a primitive type, False otherwise
+    """
+    pattern = r"<([^}]*) object at 0x([0-9a-fA-F]{12})>"
+    match = re.match(pattern, value)
+    return not bool(match)
