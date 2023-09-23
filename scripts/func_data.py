@@ -121,8 +121,7 @@ class FunctionData:
             case "c" | "cpp" | "cxx" | "cc":
                 return c_use_global_variable(self.code)
             case "python":
-                func_name = self.file_func_name.split("?")[1]
-                return py_use_global_variable(self.code, func_name)
+                return py_use_global_variable(self.code)
             case _:
                 return None
 

@@ -29,6 +29,9 @@ class TestGetParamsPy(unittest.TestCase):
         code = "def boo(x, y):\n    z = x\n    return z"
         self.assertFalse(py_use_global_variable(code, "boo"))
 
+        code = "def int_from_bytes(value, signed=False):\n    return int.from_bytes(value, 'big', signed=signed)"
+        self.assertFalse(py_use_global_variable(code, "int_from_bytes"))
+
     def test_py_primitive(self):
         value = "1"
         self.assertTrue(is_py_primitive_type(value))
@@ -51,14 +54,13 @@ class TestGetParamsPy(unittest.TestCase):
 
         code = "def add(x: int, y: int):\n    return x + y"
         self.assertEqual(py_get_params(code), ["x", "y"])
-        
+
     def test_py_get_param_optional(self):
         code = "def add(x, y=3):\n    return x + y"
         self.assertEqual(py_get_params(code), ["x", "y"])
 
         code = "def add(x: int=1, y: int=2):\n    return x + y"
         self.assertEqual(py_get_params(code), ["x", "y"])
-        
 
 
 if __name__ == "__main__":

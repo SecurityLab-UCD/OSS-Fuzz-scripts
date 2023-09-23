@@ -336,7 +336,7 @@ def py_get_params(source_code: str) -> list[str]:
     return parameter_names
 
 
-def py_use_global_variable(code: str, func_name: str) -> bool | None:
+def py_use_global_variable(code: str) -> bool | None:
     """Checks if a Python function uses global variables
 
     Args:
@@ -346,42 +346,40 @@ def py_use_global_variable(code: str, func_name: str) -> bool | None:
     Returns:
         bool: True if the function uses global variables, False otherwise
     """
-    try:
-        exec(code)
+    # backup plan if exec() + locals() fails
+    params = set(py_get_params(code))
+    assignments = set()
+    names = set()
+    lines = code.split("\n")
 
-        func = locals()[func_name]
-        closure_vars = inspect.getclosurevars(func)
+    def is_imported_module(node_name: str, lineno: int) -> bool:
+        """is it is in form of node_name.xxx, we consider it as imported module"""
+        line = lines[lineno - 1]
+        idx = line.find(node_name) + len(node_name)
+        return idx < len(line) and line[idx] == "."
 
-        # when only checking with the function source code,
-        # globals will be identified as unbounded variables
-        # since the variable declaration is not in the input source code
-        detected_vars = [
-            closure_vars.globals,
-            closure_vars.nonlocals,
-            closure_vars.unbound,
-        ]
-        return sum(map(len, detected_vars)) > 0
-    except:
-        # backup plan if exec() + locals() fails
-        params = py_get_params(code)
-        tree = ast.parse(code)
+    tree = ast.parse(code)
 
-        # for token in tree
-        tree = ast.parse(code)
-        global_vars = []
+    for func in tree.body:
+        if isinstance(func, ast.FunctionDef):
+            # for node in func.body:
+            for node in ast.walk(func):
+                if isinstance(node, ast.Assign):
+                    if isinstance(node.targets[0], ast.Tuple):
+                        # multiple assignements, e.g. a, b = 1, 2
+                        for target in node.targets[0].elts:
+                            assignments.add(target.id)  # type: ignore
+                    else:
+                        try:
+                            assignments.add(node.targets[0].id)  # type: ignore
+                        except AttributeError:
+                            assignments.add(node.targets[0].attr)  # type: ignore
+                elif isinstance(node, ast.Name):
+                    if not is_imported_module(node.id, node.lineno):
+                        names.add(node.id)
 
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Global):
-                global_vars.extend(node.names)
-
-            if (
-                isinstance(node, ast.Name)
-                and isinstance(node.ctx, ast.Store)
-                and node.id not in params
-            ):
-                global_vars.append(node.id)
-
-        return bool(global_vars)
+    likely_globals = names - assignments - params
+    return bool(likely_globals)
 
 
 def is_py_primitive_type(value: str) -> bool:
