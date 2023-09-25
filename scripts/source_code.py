@@ -353,7 +353,7 @@ def py_use_global_variable(code: str) -> bool | None:
     lines = code.split("\n")
 
     def is_imported_module(node_name: str, lineno: int) -> bool:
-        """is it is in form of node_name.xxx, we consider it as imported module"""
+        """if it is in form of node_name.xxx, we consider it as imported module"""
         line = lines[lineno - 1]
         idx = line.find(node_name) + len(node_name)
         return idx < len(line) and line[idx] == "."
