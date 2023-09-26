@@ -103,7 +103,7 @@ class FunctionData:
                     return True
 
                 def is_io_primitive(io: list[list[str]]) -> bool:
-                    values_to_check = io[0]  # inputs
+                    values_to_check = io[0].copy()  # inputs
                     if len(io[1]) > 0:
                         values_to_check += io[1][0]  # outputs (return value)
                     return all(map(is_py_primitive_type, values_to_check))

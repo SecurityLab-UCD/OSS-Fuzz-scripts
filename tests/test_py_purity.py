@@ -12,25 +12,25 @@ import logging
 class TestGetParamsPy(unittest.TestCase):
     def test_py_global(self):
         code = "def addX(y):\n    z = x + y\n    return z"
-        self.assertTrue(py_use_global_variable(code, "addX"))
+        self.assertTrue(py_use_global_variable(code))
 
         code = "def addX(y):\n    return x + y"
-        self.assertTrue(py_use_global_variable(code, "addX"))
+        self.assertTrue(py_use_global_variable(code))
 
         code = "def add(x, y):\n    return x + y"
-        self.assertFalse(py_use_global_variable(code, "add"))
+        self.assertFalse(py_use_global_variable(code))
 
         code = "def add(x, y):\n    z = x + y\n    return z"
-        self.assertFalse(py_use_global_variable(code, "add"))
+        self.assertFalse(py_use_global_variable(code))
 
         code = "def foo(x, y):\n    z = 1\n    return z"
-        self.assertFalse(py_use_global_variable(code, "foo"))
+        self.assertFalse(py_use_global_variable(code))
 
         code = "def boo(x, y):\n    z = x\n    return z"
-        self.assertFalse(py_use_global_variable(code, "boo"))
+        self.assertFalse(py_use_global_variable(code))
 
         code = "def int_from_bytes(value, signed=False):\n    return int.from_bytes(value, 'big', signed=signed)"
-        self.assertFalse(py_use_global_variable(code, "int_from_bytes"))
+        self.assertFalse(py_use_global_variable(code))
 
     def test_py_primitive(self):
         value = "1"

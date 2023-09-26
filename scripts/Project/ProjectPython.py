@@ -27,7 +27,7 @@ class ProjectPython(Project):
     def build_w_pass(self, build_script: str = "build_w_pass.sh"):
         dockerfile = f"{OSSFUZZ}/projects/{self.project}/Dockerfile"
         decorate_fuzzers_config = [
-            "RUN pip3 install git+https://github.com/SecurityLab-UCD/python-io-capture.git",
+            "RUN pip3 install git+https://github.com/SecurityLab-UCD/python-io-capture.git --force-reinstall",
             "RUN pip3 install StrEnum",
         ] + [f"COPY decorated_{fuzzer} $SRC/{fuzzer}" for fuzzer in self.fuzzers]
 
