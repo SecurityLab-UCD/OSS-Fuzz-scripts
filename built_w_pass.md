@@ -1,16 +1,16 @@
-# Projects that can be build with [ReportPass](https://github.com/SecurityLab-UCD/ReportFunctionExecutedPass/tree/60ed2c299a060c36afd644ba86d9613d9cca7c7b)
+# Projects that can be build with [ReportPass](https://github.com/SecurityLab-UCD/ReportFunctionExecutedPass/)
 
 Here is a list of projects we build successfully (Projects with a link were manually built)
 The projects that were autobuilt have their specified C++ standard within the parenthesis, which also specifies which version of the reporter library is used
 * c++ indicates reporter.c++.o
 
-1. [ffmpeg](https://github.com/SecurityLab-UCD/oss-fuzz/blob/8d65054c1e3b09409521d80ce1b382a096905a40/projects/ffmpeg/build_w_pass.sh),c++
-2. [llvm](https://github.com/SecurityLab-UCD/oss-fuzz/blob/8d65054c1e3b09409521d80ce1b382a096905a40/projects/llvm/build_w_pass.sh),c++
-3. [json-c](https://github.com/SecurityLab-UCD/oss-fuzz/blob/8d65054c1e3b09409521d80ce1b382a096905a40/projects/json-c/build_w_pass.sh),c++
-4. [libtiff](https://github.com/SecurityLab-UCD/oss-fuzz/blob/8d65054c1e3b09409521d80ce1b382a096905a40/projects/libtiff/build_w_pass.sh),c++
-5. [lua](https://github.com/SecurityLab-UCD/oss-fuzz/blob/8d65054c1e3b09409521d80ce1b382a096905a40/projects/lua/build_w_pass.sh),c
+1. [ffmpeg](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/ffmpeg/build_w_pass.sh),c++
+2. [llvm](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/llvm/build_w_pass.sh),c++
+3. [json-c](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/json-c/build_w_pass.sh),c++
+4. [libtiff](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/libtiff/build_w_pass.sh),c++
+5. [lua](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/lua/build_w_pass.sh),c
 6. alembic(auto_build_w_pass c++),c++
-7. [libpng](https://github.com/SecurityLab-UCD/oss-fuzz/blob/8d65054c1e3b09409521d80ce1b382a096905a40/projects/libpng/build_w_pass.sh),c++
+7. [libpng](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/libpng/build_w_pass.sh),c++
 8. boost(auto_build_w_pass c++),c++
 9. mongoose(auto_build_w_pass c++),c++
 10. libssh(auto_build_w_pass c++),c
