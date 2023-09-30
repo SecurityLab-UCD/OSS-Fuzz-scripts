@@ -48,18 +48,39 @@ class ProjectPython(Project):
         os.system(f"mv {dockerfile}.bak {dockerfile}")
 
     def auto_build_w_pass(self, cpp: str):
-        def transform(code: str, module: str) -> str:
-            to_be_inserted = (
-                "from py_io_capture import decorate_module, dump_records, DUMP_FILE_NAME\n"
-                "import atexit\n"
-                f"{module} = decorate_module({module})\n"
-                "atexit.register(dump_records, DUMP_FILE_NAME)\n"
-            )
+        def transform(code: str) -> str:
+            # List of tuples of module name and whether to import the module
+            modules = []
+            ignore = {"atheris", "sys"}
+            from_import = "from .* import .*"
             lines = code.split("\n")
             for i, line in enumerate(lines):
-                if "TestOneInput" in line:
+                # If function definition, assume import statements are done
+                if "def " in line:
+                    # Add decorated modules one by one from module list
+                    to_be_inserted = (
+                        "from py_io_capture import decorate_module, dump_records, DUMP_FILE_NAME\n"
+                        "import atexit\n"
+                        "atexit.register(dump_records, DUMP_FILE_NAME)\n"
+                    )
+                    for module, imprt in modules:
+                        if imprt:
+                            to_be_inserted += f"import {module}\n"
+                        to_be_inserted += f"{module} = decorate_module({module})\n"
                     lines.insert(i - 1, to_be_inserted)
                     break
+                elif re.match(from_import, line):
+                    module = line.split(" ")[1]
+                    if module in ignore:
+                        continue
+                    modules.append((module, True))
+                elif "import " in line:
+                    # Some import statements have multiple modules imported
+                    imported_modules = line.split("import ")[1].split(", ")
+                    for module in imported_modules:
+                        if module in ignore:
+                            continue
+                        modules.append((module, False))
             return "\n".join(lines)
 
         for fuzzer in self.fuzzers:
@@ -69,23 +90,10 @@ class ProjectPython(Project):
                 continue
             with open(fuzzer_path, "r") as f:
                 code = f.read()
-            target_module = self.get_target_module(code)
-            if target_module is None:
-                warning(f"Couldn't find target module for {fuzzer_path}")
-                continue
-
             with open(f"{self.project_oss_dir}/decorated_{fuzzer}", "w") as f:
-                f.write(transform(code, target_module))
+                f.write(transform(code))
 
         self.build_w_pass()
-
-        # Remove decorated_{fuzzer} files
-        for fuzzer in self.fuzzers:
-            fuzzer_path = f"{self.project_oss_dir}/{fuzzer}"
-            if not path.isfile(fuzzer_path):
-                warning(f"{fuzzer_path} not found")
-                continue
-            os.system(f"rm {self.project_oss_dir}/decorated_{fuzzer}")
 
     def get_target_module(self, code: str) -> Optional[str]:
         """Get the **most likely** fuzz target module name based on text similarity
