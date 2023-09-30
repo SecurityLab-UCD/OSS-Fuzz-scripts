@@ -1,14 +1,16 @@
-# Projects that can be build with [ReportPass](./ReportFunctionExecutedPass/)
+# Projects that can be build with [ReportPass](https://github.com/SecurityLab-UCD/ReportFunctionExecutedPass/)
 
 Here is a list of projects we build successfully (Projects with a link were manually built)
+The projects that were autobuilt have their specified C++ standard within the parenthesis, which also specifies which version of the reporter library is used
+* c++ indicates reporter.c++.o
 
-1. [ffmpeg](./oss-fuzz/projects/ffmpeg/build_w_pass.sh),c++
-2. [llvm](./oss-fuzz/projects/llvm/build_w_pass.sh),c++
-3. [json-c](./oss-fuzz/projects/json-c/build_w_pass.sh),c++
-4. [libtiff](./oss-fuzz/projects/libtiff/build_w_pass.sh),c++
-5. [lua](./oss-fuzz/projects/lua/build_w_pass.sh),c
+1. [ffmpeg](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/ffmpeg/build_w_pass.sh),c++
+2. [llvm](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/llvm/build_w_pass.sh),c++
+3. [json-c](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/json-c/build_w_pass.sh),c++
+4. [libtiff](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/libtiff/build_w_pass.sh),c++
+5. [lua](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/lua/build_w_pass.sh),c
 6. alembic(auto_build_w_pass c++),c++
-7. [libpng](./oss-fuzz/projects/libpng/build_w_pass.sh),c++
+7. [libpng](https://github.com/SecurityLab-UCD/oss-fuzz/blob/master/projects/libpng/build_w_pass.sh),c++
 8. boost(auto_build_w_pass c++),c++
 9. mongoose(auto_build_w_pass c++),c++
 10. libssh(auto_build_w_pass c++),c
@@ -33,7 +35,7 @@ Here is a list of projects we build successfully (Projects with a link were manu
 29. croaring(auto_build_w_pass c++),c
 30. h3(auto_build_w_pass c++),c
 31. ibmswtpm2(auto_build_w_pass c++),c++
-32. inchi(auto_build_w_pass c++),c
+32. quickjs(auto_build_w_pass c++),c
 33. zydis(auto_build_w_pass c++),c
 34. libdwarf(auto_build_w_pass c++),c
 35. libpg_query(auto_build_w_pass c++),c
@@ -49,7 +51,7 @@ Here is a list of projects we build successfully (Projects with a link were manu
 45. hostap(auto_build_w_pass c++),c++
 46. htslib(auto_build_w_pass c++),c++
 47. w3m(auto_build_w_pass c++),c
-48. quickjs(auto_build_w_pass c++),c
+48. 
 49. 
 50. 
 51. 
