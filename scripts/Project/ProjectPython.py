@@ -95,19 +95,3 @@ class ProjectPython(Project):
 
         self.build_w_pass()
 
-    def get_target_module(self, code: str) -> Optional[str]:
-        """Get the **most likely** fuzz target module name based on text similarity
-
-        Args:
-            code (str): source code of file
-
-        Returns:
-            str: the **most likely** target module name
-        """
-        modules = py_get_imported_modules(code)
-
-        def get_similarity_ration(module):
-            return partial_ratio(module, self.project)
-
-        modules.sort(key=get_similarity_ration, reverse=True)
-        return modules[0] if len(modules) > 0 else None
