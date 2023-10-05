@@ -33,3 +33,5 @@ slow-unit-*
 *.csv
 *.json
 *.jsonl
+
+.coverage
