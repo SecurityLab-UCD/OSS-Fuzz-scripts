@@ -76,9 +76,12 @@ def to_py_unittest(
         # todo: consider optional parameters
         # idx 0 is the actual rnt value, the rest are pointer inputs
         expected_outputs = [outputs[0] for outputs in outputss if len(outputs) > 0]
-        if all(expected_outputs[0] == output for output in expected_outputs):
+        if (
+            all(expected_outputs[0] == output for output in expected_outputs)
+            or is_class_method
+        ):
             # all expected outputs are the same
-            expected = expected_outputs[0]
+            expected = expected_outputs[0] if len(expected_outputs) > 0 else "None"
             lines.append(f"    assert {real} == {expected}")
         else:
             # todo: decide how to handle different expected outputs
