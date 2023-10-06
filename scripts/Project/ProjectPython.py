@@ -6,7 +6,7 @@ from typing import Optional
 from scripts.common import OSSFUZZ, OSSFUZZ_SCRIPTS_HOME
 from .ProjectBase import Project
 from scripts.source_code import py_get_imported_modules
-from fuzzywuzzy.fuzz import partial_ratio
+import re
 
 
 class ProjectPython(Project):
@@ -94,4 +94,3 @@ class ProjectPython(Project):
                 f.write(transform(code))
 
         self.build_w_pass()
-
