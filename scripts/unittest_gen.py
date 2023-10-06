@@ -78,7 +78,7 @@ def to_py_unittest(
         expected_outputs = [outputs[0] for outputs in outputss if len(outputs) > 0]
         if (
             all(expected_outputs[0] == output for output in expected_outputs)
-            or is_class_method
+            or is_class_method  # if is class method, we only consider the first output with instance init constructor
         ):
             # all expected outputs are the same
             expected = expected_outputs[0] if len(expected_outputs) > 0 else "None"
